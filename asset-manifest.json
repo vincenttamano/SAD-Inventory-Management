@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/SAD-Inventory-Management/static/css/main.48b02fb3.css",
+    "main.js": "/SAD-Inventory-Management/static/js/main.c87cf21f.js",
+    "index.html": "/SAD-Inventory-Management/index.html",
+    "main.48b02fb3.css.map": "/SAD-Inventory-Management/static/css/main.48b02fb3.css.map",
+    "main.c87cf21f.js.map": "/SAD-Inventory-Management/static/js/main.c87cf21f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.48b02fb3.css",
+    "static/js/main.c87cf21f.js"
+  ]
+}
