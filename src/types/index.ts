@@ -25,8 +25,10 @@ export interface User {
 
 export interface UsageRecord {
   id: string;
+  patientConsent: boolean;
   patientName: string;
   patientId: string;
+  procedure: string;
   date: string;
   items: UsageItem[];
   recordedBy: string;
@@ -44,6 +46,9 @@ export interface UsageItem {
 export interface SimpleUsageRecord {
   id: string;
   date: string;
+  procedure: string;
+  patientConsent: boolean;
+  patientName: string;
   items: SimpleUsageItem[];
 }
 

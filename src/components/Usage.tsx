@@ -10,6 +10,9 @@ export function Usage() {
   const [selectedItems, setSelectedItems] = useState<{ itemId: string; quantity: number }[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [procedure, setProcedure] = useState('');
+  const [patientConsent, setPatientConsent] = useState(false);
+  const [patientName, setPatientName] = useState('');
 
   useEffect(() => {
     setInventory(initializeInventory());
@@ -19,7 +22,15 @@ export function Usage() {
   const loadUsageHistory = () => {
     const stored = localStorage.getItem('dentalClinicUsageHistory');
     if (stored) {
-      setUsageHistory(JSON.parse(stored));
+      const parsed = JSON.parse(stored) as SimpleUsageRecord[];
+      setUsageHistory(
+        parsed.map((record) => ({
+          ...record,
+          procedure: record.procedure || 'Not specified',
+          patientConsent: record.patientConsent ?? false,
+          patientName: record.patientName || 'Anonymous Patient',
+        }))
+      );
     }
   };
 
@@ -51,6 +62,16 @@ export function Usage() {
       return;
     }
 
+    if (!procedure.trim()) {
+      alert('Please enter the procedure');
+      return;
+    }
+
+    if (patientConsent && !patientName.trim()) {
+      alert('Please enter patient name or uncheck consent to keep name hidden');
+      return;
+    }
+
     // Update inventory quantities
     const updatedInventory = inventory.map(item => {
       const usedItem = selectedItems.find(si => si.itemId === item.id);
@@ -67,6 +88,9 @@ export function Usage() {
     const newRecord: SimpleUsageRecord = {
       id: Date.now().toString(),
       date: date,
+      procedure: procedure.trim(),
+      patientConsent,
+      patientName: patientConsent ? patientName.trim() : 'Anonymous Patient',
       items: selectedItems.map(si => {
         const item = inventory.find(i => i.id === si.itemId)!;
         return {
@@ -86,6 +110,9 @@ export function Usage() {
     // Reset form
     setSelectedItems([]);
     setDate(new Date().toISOString().split('T')[0]);
+    setProcedure('');
+    setPatientConsent(false);
+    setPatientName('');
     setIsModalOpen(false);
   };
 
@@ -175,6 +202,12 @@ export function Usage() {
                   Date
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Procedure
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Patient
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Items Used
                 </th>
                 <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -191,6 +224,14 @@ export function Usage() {
                       <span className="text-xs sm:text-sm text-gray-900">
                         {new Date(record.date).toLocaleDateString()}
                       </span>
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4">
+                    <div className="text-xs sm:text-sm text-gray-900">{record.procedure || 'Not specified'}</div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4">
+                    <div className="text-xs sm:text-sm text-gray-900">
+                      {record.patientConsent ? record.patientName : 'Anonymous (name hidden)'}
                     </div>
                   </td>
                   <td className="px-3 sm:px-6 py-4">
@@ -227,7 +268,10 @@ export function Usage() {
             <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-900">Record Usage</h2>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
+                aria-label="Close record usage modal"
+                title="Close"
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="w-6 h-6" />
@@ -244,8 +288,45 @@ export function Usage() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  aria-label="Usage date"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Procedure
+                </label>
+                <input
+                  type="text"
+                  value={procedure}
+                  onChange={(e) => setProcedure(e.target.value)}
+                  placeholder="e.g., Tooth extraction"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={patientConsent}
+                    onChange={(e) => setPatientConsent(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Patient consents to recording their name
+                </label>
+                <input
+                  type="text"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  disabled={!patientConsent}
+                  placeholder={patientConsent ? 'Enter patient name' : 'Name hidden (no consent)'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500"
+                />
+                {!patientConsent && (
+                  <p className="mt-1 text-xs text-gray-500">This usage will be saved as Anonymous Patient.</p>
+                )}
               </div>
 
               {/* Selected Items */}
@@ -269,11 +350,15 @@ export function Usage() {
                           min="1"
                           value={quantity}
                           onChange={(e) => handleQuantityChange(itemId, parseInt(e.target.value))}
+                          aria-label={`Quantity for ${item.productName}`}
                           className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                         />
                         <span className="text-sm text-gray-600">{item.unit}</span>
                         <button
+                          type="button"
                           onClick={() => handleRemoveItem(itemId)}
+                          aria-label={`Remove ${item.productName}`}
+                          title={`Remove ${item.productName}`}
                           className="text-red-600 hover:text-red-800"
                         >
                           <X className="w-5 h-5" />

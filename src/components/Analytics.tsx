@@ -4,15 +4,22 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { Package, TrendingUp, AlertCircle, DollarSign, ShieldAlert, ShoppingBag } from 'lucide-react';
-import { InventoryItem, User } from '../types';
+import { InventoryItem, UsageRecord, User } from '../types';
 import { initializeInventory } from '../utils/mockData';
 
 export function Analytics() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [patientUsageHistory, setPatientUsageHistory] = useState<UsageRecord[]>([]);
   const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff');
 
   useEffect(() => {
     setInventory(initializeInventory());
+
+    const storedPatientUsage = localStorage.getItem('usageHistory');
+    if (storedPatientUsage) {
+      const parsedUsage = JSON.parse(storedPatientUsage) as UsageRecord[];
+      setPatientUsageHistory(parsedUsage);
+    }
     
     // Get user role from localStorage
     const userData = localStorage.getItem('dentalClinicUser');
@@ -78,6 +85,28 @@ export function Analytics() {
       current: item.quantity,
       threshold: item.lowStockThreshold,
     }));
+
+  // Most used procedures from patient usage records
+  const procedureUsageData = patientUsageHistory.reduce((acc, record) => {
+    const procedureName = record.procedure?.trim() || 'Unspecified Procedure';
+    const existing = acc.find(x => x.name === procedureName);
+    const itemsUsed = record.items.reduce((sum, item) => sum + item.quantityUsed, 0);
+
+    if (existing) {
+      existing.count += 1;
+      existing.itemsUsed += itemsUsed;
+    } else {
+      acc.push({
+        name: procedureName,
+        count: 1,
+        itemsUsed,
+      });
+    }
+
+    return acc;
+  }, [] as { name: string; count: number; itemsUsed: number }[])
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 
   // Monthly expenses data (mock)
   const monthlyExpensesData = [
@@ -215,6 +244,66 @@ export function Analytics() {
             />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Most Used Procedures */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">Most Used Procedures</h2>
+        {procedureUsageData.length === 0 ? (
+          <p className="text-sm text-gray-500">No patient usage records yet. Record patient usage to see procedure trends.</p>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={procedureUsageData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="name"
+                  stroke="#9ca3af"
+                  style={{ fontSize: '11px' }}
+                  angle={-20}
+                  textAnchor="end"
+                  height={90}
+                />
+                <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                  formatter={(value: number, name: string) => {
+                    if (name === 'count') return [value, 'Times Recorded'];
+                    if (name === 'itemsUsed') return [value.toFixed(2), 'Total Items Used'];
+                    return [value, name];
+                  }}
+                />
+                <Bar dataKey="count" name="Times Recorded" fill="#6366f1" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">PROCEDURE</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">TIMES RECORDED</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">TOTAL ITEMS USED</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {procedureUsageData.map((item) => (
+                    <tr key={item.name} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4 text-sm font-medium text-gray-900">{item.name}</td>
+                      <td className="py-4 px-4 text-sm text-gray-900">{item.count}</td>
+                      <td className="py-4 px-4 text-sm text-gray-900">{item.itemsUsed.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Row: Total Quantity by Category & Monthly Expenses */}

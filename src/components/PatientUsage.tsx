@@ -7,8 +7,10 @@ import { toast } from 'sonner';
 export function PatientUsage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [usageHistory, setUsageHistory] = useState<UsageRecord[]>([]);
+  const [patientConsent, setPatientConsent] = useState(false);
   const [patientName, setPatientName] = useState('');
   const [patientId, setPatientId] = useState('');
+  const [procedure, setProcedure] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedItems, setSelectedItems] = useState<UsageItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -59,8 +61,18 @@ export function PatientUsage() {
     e.preventDefault();
 
     // Validation
+    if (!patientConsent) {
+      toast.error('Patient consent is required to record their name');
+      return;
+    }
+
     if (!patientName.trim() || !patientId.trim()) {
       toast.error('Please enter patient name and ID');
+      return;
+    }
+
+    if (!procedure.trim()) {
+      toast.error('Please enter the procedure');
       return;
     }
 
@@ -102,8 +114,10 @@ export function PatientUsage() {
     const user = JSON.parse(localStorage.getItem('dentalClinicUser') || '{}');
     const newRecord: UsageRecord = {
       id: Date.now().toString(),
+      patientConsent,
       patientName,
       patientId,
+      procedure: procedure.trim(),
       date: new Date().toISOString(),
       items: selectedItems,
       recordedBy: user.name || 'Unknown',
@@ -119,8 +133,10 @@ export function PatientUsage() {
     saveInventory(updatedInventory);
 
     // Reset form
+    setPatientConsent(false);
     setPatientName('');
     setPatientId('');
+    setProcedure('');
     setNotes('');
     setSelectedItems([]);
 
@@ -153,7 +169,18 @@ export function PatientUsage() {
         
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Patient Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="space-y-4">
+            <label className="flex items-start sm:items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                checked={patientConsent}
+                onChange={(e) => setPatientConsent(e.target.checked)}
+                className="mt-0.5 sm:mt-0 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>I confirm the patient consents to their name being recorded.</span>
+            </label>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label htmlFor="patientName" className="block text-sm font-medium text-gray-700 mb-2">
                 <User className="w-4 h-4 inline mr-1" />
@@ -165,6 +192,7 @@ export function PatientUsage() {
                 required
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
+                disabled={!patientConsent}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter patient name"
               />
@@ -181,9 +209,27 @@ export function PatientUsage() {
                 required
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
+                disabled={!patientConsent}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter patient ID"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="procedure" className="block text-sm font-medium text-gray-700 mb-2">
+                Procedure
+              </label>
+              <input
+                type="text"
+                id="procedure"
+                required
+                value={procedure}
+                onChange={(e) => setProcedure(e.target.value)}
+                disabled={!patientConsent}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
+                placeholder="Enter performed procedure"
+              />
+            </div>
             </div>
           </div>
 
@@ -217,6 +263,7 @@ export function PatientUsage() {
                       <div className="flex-1">
                         <label className="block text-xs text-gray-600 mb-1">Product</label>
                         <select
+                          aria-label={`Select product for item ${index + 1}`}
                           value={item.productId}
                           onChange={(e) => updateItemRow(index, 'productId', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-sm"
@@ -259,6 +306,8 @@ export function PatientUsage() {
                           <button
                             type="button"
                             onClick={() => removeItemRow(index)}
+                            title={`Remove item ${index + 1}`}
+                            aria-label={`Remove item ${index + 1}`}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -328,6 +377,9 @@ export function PatientUsage() {
                         <span className="flex items-center">
                           <User className="w-4 h-4 mr-1" />
                           ID: {record.patientId}
+                        </span>
+                        <span>
+                          Procedure: {record.procedure || 'Not specified'}
                         </span>
                         <span className="flex items-center">
                           <Calendar className="w-4 h-4 mr-1" />
