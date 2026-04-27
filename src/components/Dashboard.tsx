@@ -128,7 +128,7 @@ export function Dashboard() {
                   itemStyle={{ color: '#1E1E1E', fontWeight: 600 }}
                   labelStyle={{ color: '#6b7280', marginBottom: '4px' }}
                 />
-                <Bar dataKey="amount" fill="#cf984d" name="Cost ($)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="amount" fill="#cf984d" name="Cost (₱)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -205,7 +205,7 @@ export function Dashboard() {
         />
         <StatCard 
           title="This Month" 
-          value={`$${thisMonthExpense.toLocaleString()}`} 
+          value={`₱${thisMonthExpense.toLocaleString()}`} 
           icon={TrendingUp} 
           colorClass="text-green-500" 
           bgClass="bg-green-50"

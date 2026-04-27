@@ -133,7 +133,7 @@ export function Layout() {
           <div className="flex justify-between items-center h-16">
             {/* Brand */}
             <div className="flex items-center space-x-3">
-              <img src="public/logo.png" alt="JT Dental Clinic" className="w-8 h-8 rounded-full" />
+              <img src={`${import.meta.env.BASE_URL}logo.png`} alt="JT Dental Clinic" className="w-8 h-8 rounded-full" />
               <div className="flex flex-col">
                 <span className="text-xl font-bold text-gray-100">JT Alunan Dental</span>
                 {user && (

@@ -244,7 +244,7 @@ export function Inventory() {
                     </td>
                     <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-xs sm:text-sm text-gray-900">
-                        ${item.price?.toFixed(2) || '0.00'}
+                        ₱${item.price?.toFixed(2) || '0.00'}
                       </div>
                     </td>
                     <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">

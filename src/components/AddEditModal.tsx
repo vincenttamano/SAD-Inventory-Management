@@ -283,7 +283,7 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
             {/* Price */}
             <div>
               <label htmlFor="price" className="block text-sm font-semibold text-dark-900 mb-2">
-                Unit Price ($)
+                Unit Price (₱)
               </label>
               <input
                 type="number"
