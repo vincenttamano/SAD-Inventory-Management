@@ -28,10 +28,10 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gold-50 to-blue-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-blue-600 p-3 rounded-full mb-4">
+          <div className="bg-gold-600 p-3 rounded-full mb-4">
             <Activity className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Dental Clinic</h1>
@@ -50,12 +50,12 @@ export function Login() {
                 onClick={() => setRole('staff')}
                 className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${
                   role === 'staff'
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-gold-500 bg-gold-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <UserCircle className={`w-8 h-8 mb-2 ${role === 'staff' ? 'text-blue-600' : 'text-gray-400'}`} />
-                <span className={`font-medium ${role === 'staff' ? 'text-blue-900' : 'text-gray-700'}`}>
+                <UserCircle className={`w-8 h-8 mb-2 ${role === 'staff' ? 'text-gold-600' : 'text-gray-400'}`} />
+                <span className={`font-medium ${role === 'staff' ? 'text-gold-900' : 'text-gray-700'}`}>
                   Staff
                 </span>
                 <span className="text-xs text-gray-500 mt-1 text-center">View & Record Usage</span>
@@ -66,12 +66,12 @@ export function Login() {
                 onClick={() => setRole('admin')}
                 className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${
                   role === 'admin'
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-gold-500 bg-gold-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <ShieldCheck className={`w-8 h-8 mb-2 ${role === 'admin' ? 'text-blue-600' : 'text-gray-400'}`} />
-                <span className={`font-medium ${role === 'admin' ? 'text-blue-900' : 'text-gray-700'}`}>
+                <ShieldCheck className={`w-8 h-8 mb-2 ${role === 'admin' ? 'text-gold-600' : 'text-gray-400'}`} />
+                <span className={`font-medium ${role === 'admin' ? 'text-gold-900' : 'text-gray-700'}`}>
                   Admin
                 </span>
                 <span className="text-xs text-gray-500 mt-1 text-center">Full Access</span>
@@ -90,7 +90,7 @@ export function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
                 placeholder="admin@dentalclinic.com"
               />
             </div>
@@ -107,7 +107,7 @@ export function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
                 placeholder="Enter your password"
               />
             </div>
@@ -121,7 +121,7 @@ export function Login() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg transition duration-200 font-medium"
+            className="w-full bg-gold-600 hover:bg-gold-700 text-white py-3 rounded-lg transition duration-200 font-medium"
           >
             Sign In as {role === 'admin' ? 'Admin' : 'Staff'}
           </button>

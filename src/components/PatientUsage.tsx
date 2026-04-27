@@ -175,7 +175,7 @@ export function PatientUsage() {
                 type="checkbox"
                 checked={patientConsent}
                 onChange={(e) => setPatientConsent(e.target.checked)}
-                className="mt-0.5 sm:mt-0 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="mt-0.5 sm:mt-0 h-4 w-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
               />
               <span>I confirm the patient consents to their name being recorded.</span>
             </label>
@@ -193,7 +193,7 @@ export function PatientUsage() {
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
                 disabled={!patientConsent}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter patient name"
               />
             </div>
@@ -210,7 +210,7 @@ export function PatientUsage() {
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
                 disabled={!patientConsent}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter patient ID"
               />
             </div>
@@ -226,7 +226,7 @@ export function PatientUsage() {
                 value={procedure}
                 onChange={(e) => setProcedure(e.target.value)}
                 disabled={!patientConsent}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter performed procedure"
               />
             </div>
@@ -242,7 +242,7 @@ export function PatientUsage() {
               <button
                 type="button"
                 onClick={addItemRow}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition text-sm w-full sm:w-auto justify-center"
+                className="flex items-center space-x-2 bg-gold-600 hover:bg-gold-700 text-white px-3 py-1.5 rounded-lg transition text-sm w-full sm:w-auto justify-center"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Item</span>
@@ -266,7 +266,7 @@ export function PatientUsage() {
                           aria-label={`Select product for item ${index + 1}`}
                           value={item.productId}
                           onChange={(e) => updateItemRow(index, 'productId', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none bg-white text-sm"
                           required
                         >
                           <option value="">Select a product</option>
@@ -287,7 +287,7 @@ export function PatientUsage() {
                             step="0.01"
                             value={item.quantityUsed || ''}
                             onChange={(e) => updateItemRow(index, 'quantityUsed', parseFloat(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm"
                             placeholder="0"
                             required
                           />
@@ -331,7 +331,7 @@ export function PatientUsage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm sm:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none resize-none text-sm sm:text-base"
               placeholder="Add any additional notes about the procedure or usage..."
             />
           </div>
@@ -390,7 +390,7 @@ export function PatientUsage() {
                         </span>
                       </div>
                     </div>
-                    <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
+                    <div className="bg-gold-100 text-gold-800 px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
                       {getTotalItemsUsed(record)} items used
                     </div>
                   </div>

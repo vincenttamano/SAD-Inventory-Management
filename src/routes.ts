@@ -6,6 +6,7 @@ import { Analytics } from "./components/Analytics";
 import { PatientUsage } from "./components/PatientUsage";
 import { Usage } from "./components/Usage";
 import { Layout } from "./components/Layout";
+import { PatientManagement } from "./components/PatientManagement";
 
 export const router = createHashRouter([
   {
@@ -21,6 +22,7 @@ export const router = createHashRouter([
       { path: "usage", Component: Usage },
       { path: "analytics", Component: Analytics },
       { path: "patient-usage", Component: PatientUsage },
+      { path: "patient-management", Component: PatientManagement },
     ],
   },
 ]);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Tag } from 'lucide-react';
 import { InventoryItem } from '../types';
 
 interface AddEditModalProps {
@@ -8,7 +8,45 @@ interface AddEditModalProps {
   onClose: () => void;
 }
 
+const DEFAULT_CATEGORIES = [
+  'Anesthetics',
+  'PPE',
+  'Restorative',
+  'Disinfectants',
+  'Instruments',
+  'Consumables',
+  'Preventive',
+  'Other',
+];
+
+const STORAGE_KEY = 'dentalCustomCategories';
+
+function loadCategories(): string[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const custom: string[] = JSON.parse(stored);
+      return Array.from(new Set([...DEFAULT_CATEGORIES, ...custom]));
+    }
+  } catch {}
+  return DEFAULT_CATEGORIES;
+}
+
+function saveCustomCategory(name: string) {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const existing: string[] = stored ? JSON.parse(stored) : [];
+    if (!existing.includes(name)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...existing, name]));
+    }
+  } catch {}
+}
+
 export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
+  const [categories, setCategories] = useState<string[]>(loadCategories());
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
   const [formData, setFormData] = useState<Omit<InventoryItem, 'id'>>({
     productName: '',
     quantity: 0,
@@ -30,6 +68,9 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
         lowStockThreshold: item.lowStockThreshold,
         dateCreated: item.dateCreated,
       });
+      setCategories((prev) =>
+        prev.includes(item.category) ? prev : [...prev, item.category]
+      );
     }
   }, [item]);
 
@@ -44,31 +85,47 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: name === 'quantity' || name === 'lowStockThreshold' ? Number(value) : value,
     }));
   };
 
+  const handleAddCategory = () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    if (categories.includes(trimmed)) {
+      setFormData((prev) => ({ ...prev, category: trimmed }));
+    } else {
+      const updated = [...categories, trimmed];
+      setCategories(updated);
+      saveCustomCategory(trimmed);
+      setFormData((prev) => ({ ...prev, category: trimmed }));
+    }
+    setNewCategoryName('');
+    setAddingCategory(false);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-            {item ? 'Edit Item' : 'Add New Item'}
+    <div className="fixed inset-0 bg-dark-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-gray-100">
+        <div className="flex justify-between items-center p-5 sm:p-7 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-dark-900 tracking-tight">
+            {item ? 'Edit Inventory Item' : 'Add New Item'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition"
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-dark-900 transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <div>
-              <label htmlFor="productName" className="block text-sm font-medium text-gray-700 mb-2">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            {/* Product Name */}
+            <div className="col-span-1 md:col-span-2">
+              <label htmlFor="productName" className="block text-sm font-semibold text-dark-900 mb-2">
                 Product Name
               </label>
               <input
@@ -78,36 +135,79 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
                 required
                 value={formData.productName}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
-                placeholder="Enter product name"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
+                placeholder="e.g. Anesthetic Solution"
               />
             </div>
 
+            {/* Category */}
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="category" className="block text-sm font-semibold text-dark-900 mb-2">
                 Category
               </label>
-              <select
-                id="category"
-                name="category"
-                required
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white text-sm sm:text-base"
-              >
-                <option value="Anesthetics">Anesthetics</option>
-                <option value="PPE">PPE</option>
-                <option value="Restorative">Restorative</option>
-                <option value="Disinfectants">Disinfectants</option>
-                <option value="Instruments">Instruments</option>
-                <option value="Consumables">Consumables</option>
-                <option value="Preventive">Preventive</option>
-                <option value="Other">Other</option>
-              </select>
+
+              {!addingCategory ? (
+                <div className="flex gap-2">
+                  <select
+                    id="category"
+                    name="category"
+                    required
+                    value={formData.category}
+                    onChange={handleChange}
+                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none appearance-none text-dark-900 transition-shadow"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setAddingCategory(true)}
+                    title="Add new category"
+                    className="flex items-center gap-1 px-4 py-3 bg-gold-50 hover:bg-gold-100 border border-gold-200 text-gold-700 rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
+                  >
+                    <Plus className="w-4 h-4" />
+                    New
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); }
+                        if (e.key === 'Escape') { setAddingCategory(false); setNewCategoryName(''); }
+                      }}
+                      placeholder="Custom category…"
+                      className="w-full pl-9 pr-3 py-3 bg-white border border-gold-400 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddCategory}
+                    className="px-4 py-3 bg-gold-500 hover:bg-gold-600 text-white rounded-xl text-sm font-bold transition-colors"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAddingCategory(false); setNewCategoryName(''); }}
+                    className="px-3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
 
+            {/* Quantity */}
             <div>
-              <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="quantity" className="block text-sm font-semibold text-dark-900 mb-2">
                 Quantity
               </label>
               <input
@@ -118,14 +218,14 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
                 min="0"
                 value={formData.quantity}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
-                placeholder="0"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
               />
             </div>
 
+            {/* Unit */}
             <div>
-              <label htmlFor="unit" className="block text-sm font-medium text-gray-700 mb-2">
-                Unit
+              <label htmlFor="unit" className="block text-sm font-semibold text-dark-900 mb-2">
+                Unit Measure
               </label>
               <select
                 id="unit"
@@ -133,21 +233,17 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
                 required
                 value={formData.unit}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white text-sm sm:text-base"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none appearance-none text-dark-900 transition-shadow"
               >
-                <option value="pieces">Pieces</option>
-                <option value="boxes">Boxes</option>
-                <option value="bottles">Bottles</option>
-                <option value="syringes">Syringes</option>
-                <option value="packs">Packs</option>
-                <option value="tubes">Tubes</option>
-                <option value="kg">Kg</option>
-                <option value="liters">Liters</option>
+                {['pieces', 'boxes', 'bottles', 'syringes', 'packs', 'tubes', 'kg', 'liters'].map((u) => (
+                  <option key={u} value={u}>{u.charAt(0).toUpperCase() + u.slice(1)}</option>
+                ))}
               </select>
             </div>
 
+            {/* Expiry Date */}
             <div>
-              <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="expiryDate" className="block text-sm font-semibold text-dark-900 mb-2">
                 Expiry Date
               </label>
               <input
@@ -157,13 +253,14 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
                 required
                 value={formData.expiryDate}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
               />
             </div>
 
+            {/* Low Stock Threshold */}
             <div>
-              <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 mb-2">
-                Low Stock Threshold
+              <label htmlFor="lowStockThreshold" className="block text-sm font-semibold text-dark-900 mb-2">
+                Alert Threshold (Low Stock)
               </label>
               <input
                 type="number"
@@ -173,25 +270,24 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
                 min="0"
                 value={formData.lowStockThreshold}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm sm:text-base"
-                placeholder="10"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
               />
             </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-4 pt-4 border-t border-gray-200">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+              className="px-8 py-3 font-bold bg-dark-900 hover:bg-black text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
             >
-              {item ? 'Update' : 'Add'} Item
+              {item ? 'Save Changes' : 'Add Item'}
             </button>
           </div>
         </form>

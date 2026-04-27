@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, X, Calendar, Package } from 'lucide-react';
-import { InventoryItem, SimpleUsageRecord } from '../types';
+import { Plus, Search, X, Calendar, Package, Trash2, Edit2 } from 'lucide-react';
+import { InventoryItem, SimpleUsageRecord, User } from '../types';
 import { initializeInventory, saveInventory } from '../utils/mockData';
 
 export function Usage() {
@@ -13,11 +13,21 @@ export function Usage() {
   const [procedure, setProcedure] = useState('');
   const [patientConsent, setPatientConsent] = useState(false);
   const [patientName, setPatientName] = useState('');
+  const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff');
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
 
   useEffect(() => {
     setInventory(initializeInventory());
     loadUsageHistory();
+
+    const userData = localStorage.getItem('dentalClinicUser');
+    if (userData) {
+      const user: User = JSON.parse(userData);
+      setUserRole(user.role);
+    }
   }, []);
+
+  const isAdmin = userRole === 'admin';
 
   const loadUsageHistory = () => {
     const stored = localStorage.getItem('dentalClinicUsageHistory');
@@ -72,8 +82,23 @@ export function Usage() {
       return;
     }
 
-    // Update inventory quantities
-    const updatedInventory = inventory.map(item => {
+    let updatedInventory = [...inventory];
+
+    // If editing, first refund the old quantities back to inventory
+    if (editingRecordId) {
+      const oldRecord = usageHistory.find(r => r.id === editingRecordId);
+      if (oldRecord) {
+        oldRecord.items.forEach(oldItem => {
+          const invItem = updatedInventory.find(i => i.id === oldItem.itemId);
+          if (invItem) {
+            invItem.quantity += oldItem.quantity;
+          }
+        });
+      }
+    }
+
+    // Now deduct the new quantities from inventory
+    updatedInventory = updatedInventory.map(item => {
       const usedItem = selectedItems.find(si => si.itemId === item.id);
       if (usedItem) {
         return {
@@ -86,7 +111,7 @@ export function Usage() {
 
     // Create usage record
     const newRecord: SimpleUsageRecord = {
-      id: Date.now().toString(),
+      id: editingRecordId || Date.now().toString(),
       date: date,
       procedure: procedure.trim(),
       patientConsent,
@@ -105,7 +130,12 @@ export function Usage() {
     // Save updates
     setInventory(updatedInventory);
     saveInventory(updatedInventory);
-    saveUsageHistory([newRecord, ...usageHistory]);
+    
+    if (editingRecordId) {
+      saveUsageHistory(usageHistory.map(r => r.id === editingRecordId ? newRecord : r));
+    } else {
+      saveUsageHistory([newRecord, ...usageHistory]);
+    }
 
     // Reset form
     setSelectedItems([]);
@@ -113,7 +143,41 @@ export function Usage() {
     setProcedure('');
     setPatientConsent(false);
     setPatientName('');
+    setEditingRecordId(null);
     setIsModalOpen(false);
+  };
+
+  const handleEditUsage = (record: SimpleUsageRecord) => {
+    setEditingRecordId(record.id);
+    setDate(record.date);
+    setProcedure(record.procedure);
+    setPatientConsent(record.patientConsent);
+    setPatientName(record.patientName === 'Anonymous Patient' || record.patientName.includes('Anonymous') ? '' : record.patientName);
+    setSelectedItems(record.items.map(i => ({ itemId: i.itemId, quantity: i.quantity })));
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteUsage = (recordId: string) => {
+    if (!window.confirm('Are you sure you want to delete this usage record? The used items will be restored to inventory.')) return;
+
+    const recordToDelete = usageHistory.find(r => r.id === recordId);
+    if (!recordToDelete) return;
+
+    // Refund inventory
+    const updatedInventory = [...inventory];
+    recordToDelete.items.forEach(usedItem => {
+      const invItem = updatedInventory.find(i => i.id === usedItem.itemId);
+      if (invItem) {
+        invItem.quantity += usedItem.quantity;
+      }
+    });
+
+    setInventory(updatedInventory);
+    saveInventory(updatedInventory);
+
+    // Remove from history
+    const updatedHistory = usageHistory.filter(r => r.id !== recordId);
+    saveUsageHistory(updatedHistory);
   };
 
   const filteredInventory = inventory.filter(item =>
@@ -142,8 +206,16 @@ export function Usage() {
           <p className="text-sm text-gray-500 mt-1">Record items used and view history</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition w-full sm:w-auto justify-center"
+          onClick={() => {
+            setEditingRecordId(null);
+            setSelectedItems([]);
+            setDate(new Date().toISOString().split('T')[0]);
+            setProcedure('');
+            setPatientConsent(false);
+            setPatientName('');
+            setIsModalOpen(true);
+          }}
+          className="flex items-center space-x-2 bg-dark-900 hover:bg-black text-gold-400 px-6 py-2.5 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto font-bold justify-center"
         >
           <Plus className="w-5 h-5" />
           <span>Record Usage</span>
@@ -158,8 +230,8 @@ export function Usage() {
               <p className="text-gray-600 text-sm">Total Records</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{usageHistory.length}</p>
             </div>
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <Calendar className="w-6 h-6 text-blue-600" />
+            <div className="bg-gold-100 p-3 rounded-lg">
+              <Calendar className="w-6 h-6 text-gold-600" />
             </div>
           </div>
         </div>
@@ -213,6 +285,11 @@ export function Usage() {
                 <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Details
                 </th>
+                {isAdmin && (
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -248,6 +325,26 @@ export function Usage() {
                       ))}
                     </div>
                   </td>
+                  {isAdmin && (
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEditUsage(record)}
+                          className="text-gold-600 hover:text-gold-800 transition p-1 bg-gold-50 rounded-md"
+                          title="Edit Usage"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUsage(record.id)}
+                          className="text-red-600 hover:text-red-800 transition p-1 bg-red-50 rounded-md"
+                          title="Delete Usage"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -263,25 +360,27 @@ export function Usage() {
 
       {/* Record Usage Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900">Record Usage</h2>
+        <div className="fixed inset-0 bg-dark-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-gray-100">
+            <div className="p-5 sm:p-7 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-dark-900 tracking-tight">
+                {editingRecordId ? 'Edit Usage Record' : 'Record Usage'}
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 aria-label="Close record usage modal"
                 title="Close"
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-dark-900 transition-colors"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 space-y-6">
+            <div className="p-5 sm:p-7 space-y-6">
               {/* Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-dark-900 mb-2">
                   Date
                 </label>
                 <input
@@ -289,12 +388,12 @@ export function Usage() {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   aria-label="Usage date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-dark-900 mb-2">
                   Procedure
                 </label>
                 <input
@@ -302,17 +401,17 @@ export function Usage() {
                   value={procedure}
                   onChange={(e) => setProcedure(e.target.value)}
                   placeholder="e.g., Tooth extraction"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                 />
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center gap-2 text-sm font-semibold text-dark-900 mb-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={patientConsent}
                     onChange={(e) => setPatientConsent(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-5 w-5 rounded border-gray-300 text-gold-600 focus:ring-gold-500 cursor-pointer"
                   />
                   Patient consents to recording their name
                 </label>
@@ -322,88 +421,93 @@ export function Usage() {
                   onChange={(e) => setPatientName(e.target.value)}
                   disabled={!patientConsent}
                   placeholder={patientConsent ? 'Enter patient name' : 'Name hidden (no consent)'}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:text-gray-500"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 text-dark-900 transition-shadow"
                 />
                 {!patientConsent && (
-                  <p className="mt-1 text-xs text-gray-500">This usage will be saved as Anonymous Patient.</p>
+                  <p className="mt-2 text-xs font-medium text-gray-500">This usage will be saved as Anonymous Patient.</p>
                 )}
               </div>
 
               {/* Selected Items */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-dark-900 mb-2">
                   Selected Items
                 </label>
-                <div className="space-y-2 mb-4">
+                <div className="space-y-3 mb-4">
                   {selectedItems.map(({ itemId, quantity }) => {
                     const item = inventory.find(i => i.id === itemId);
                     if (!item) return null;
 
                     return (
-                      <div key={itemId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={itemId} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{item.productName}</p>
-                          <p className="text-xs text-gray-500">{item.category}</p>
+                          <p className="text-sm font-bold text-dark-900">{item.productName}</p>
+                          <p className="text-xs font-medium text-gold-600 mt-0.5">{item.category}</p>
                         </div>
-                        <input
-                          type="number"
-                          min="1"
-                          value={quantity}
-                          onChange={(e) => handleQuantityChange(itemId, parseInt(e.target.value))}
-                          aria-label={`Quantity for ${item.productName}`}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                        />
-                        <span className="text-sm text-gray-600">{item.unit}</span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={quantity}
+                            onChange={(e) => handleQuantityChange(itemId, parseInt(e.target.value))}
+                            aria-label={`Quantity for ${item.productName}`}
+                            className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-gold-500 outline-none"
+                          />
+                          <span className="text-sm font-medium text-gray-500">{item.unit}</span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(itemId)}
                           aria-label={`Remove ${item.productName}`}
                           title={`Remove ${item.productName}`}
-                          className="text-red-600 hover:text-red-800"
+                          className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <X className="w-5 h-5" />
                         </button>
                       </div>
                     );
                   })}
+                  {selectedItems.length === 0 && (
+                    <p className="text-sm text-gray-500 italic py-2">No items selected yet.</p>
+                  )}
                 </div>
               </div>
 
               {/* Add Items */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-dark-900 mb-2">
                   Add Items
                 </label>
                 <div className="relative mb-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search inventory..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                   />
                 </div>
-                <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg">
+                <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-xl bg-white shadow-inner">
                   {filteredInventory.map(item => {
                     const isSelected = selectedItems.some(si => si.itemId === item.id);
                     return (
                       <div
                         key={item.id}
-                        className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                          isSelected ? 'bg-blue-50' : ''
+                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                          isSelected ? 'bg-gold-50 border-l-4 border-l-gold-500' : ''
                         }`}
                         onClick={() => !isSelected && handleAddItem(item.id)}
                       >
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{item.productName}</p>
-                            <p className="text-xs text-gray-500">{item.category}</p>
+                            <p className="text-sm font-bold text-dark-900">{item.productName}</p>
+                            <p className="text-xs font-medium text-gray-500 mt-0.5">{item.category}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-gray-900">{item.quantity} {item.unit}</p>
+                            <p className="text-sm font-semibold text-dark-900">{item.quantity} <span className="text-gray-500 font-normal">{item.unit}</span></p>
                             {isSelected && (
-                              <p className="text-xs text-blue-600">Selected</p>
+                              <p className="text-xs font-bold text-gold-600 mt-0.5">Selected</p>
                             )}
                           </div>
                         </div>
@@ -414,16 +518,16 @@ export function Usage() {
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 justify-end">
+            <div className="p-5 sm:p-7 border-t border-gray-100 flex flex-col-reverse sm:flex-row gap-3 justify-end">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors w-full sm:w-auto"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="px-8 py-3 font-bold bg-dark-900 hover:bg-black text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 w-full sm:w-auto"
               >
                 Save Usage
               </button>

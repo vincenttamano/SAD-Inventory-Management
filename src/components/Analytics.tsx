@@ -3,7 +3,7 @@ import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
-import { Package, TrendingUp, AlertCircle, DollarSign, ShieldAlert, ShoppingBag } from 'lucide-react';
+import { Package, TrendingUp, AlertCircle, DollarSign, ShieldAlert, ShoppingBag, Download } from 'lucide-react';
 import { InventoryItem, UsageRecord, User } from '../types';
 import { initializeInventory } from '../utils/mockData';
 
@@ -11,6 +11,7 @@ export function Analytics() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [patientUsageHistory, setPatientUsageHistory] = useState<UsageRecord[]>([]);
   const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff');
+  const [reportPeriod, setReportPeriod] = useState<'week' | 'month' | 'year'>('month');
 
   useEffect(() => {
     setInventory(initializeInventory());
@@ -156,22 +157,84 @@ export function Analytics() {
     return colors[category] || 'bg-gray-500';
   }
 
+  // Calculate filtered usage history based on report period
+  const getFilteredUsageHistory = () => {
+    const now = new Date();
+    const cutoff = new Date();
+    if (reportPeriod === 'week') {
+      cutoff.setDate(now.getDate() - 7);
+    } else if (reportPeriod === 'month') {
+      cutoff.setMonth(now.getMonth() - 1);
+    } else if (reportPeriod === 'year') {
+      cutoff.setFullYear(now.getFullYear() - 1);
+    }
+    return patientUsageHistory.filter(record => new Date(record.date) >= cutoff);
+  };
+
+  const filteredHistory = getFilteredUsageHistory();
+
+  // Print View: Most Used Products (filtered)
+  const productUsageMap = new Map<string, {name: string, quantity: number, unit: string}>();
+  filteredHistory.forEach(record => {
+    record.items.forEach(item => {
+      if (productUsageMap.has(item.productId)) {
+        productUsageMap.get(item.productId)!.quantity += item.quantityUsed;
+      } else {
+        productUsageMap.set(item.productId, { name: item.productName, quantity: item.quantityUsed, unit: item.unit });
+      }
+    });
+  });
+  const mostUsedProducts = Array.from(productUsageMap.values()).sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+  
+  const filteredProcedureData = filteredHistory.reduce((acc, record) => {
+    const procedureName = record.procedure?.trim() || 'Unspecified Procedure';
+    const existing = acc.find(x => x.name === procedureName);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      acc.push({ name: procedureName, count: 1 });
+    }
+    return acc;
+  }, [] as { name: string; count: number }[]).sort((a, b) => b.count - a.count).slice(0, 6);
+
+  const totalFilteredProcedures = filteredProcedureData.reduce((sum, proc) => sum + proc.count, 0);
+  const periodExpenses = reportPeriod === 'week' ? 1200 : (reportPeriod === 'month' ? 4500 : 54000); // Mock
+
   return (
-    <div className="space-y-6">
+    <>
+    <div className="space-y-6 print:hidden">
       {/* Header */}
-      <div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Analytics & Reports</h1>
+        <div className="flex items-center space-x-3 w-full sm:w-auto">
+          <select
+            value={reportPeriod}
+            onChange={(e) => setReportPeriod(e.target.value as 'week' | 'month' | 'year')}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-medium text-gray-700 outline-none focus:ring-2 focus:ring-gold-500 w-full sm:w-auto shadow-sm"
+          >
+            <option value="week">Past Week</option>
+            <option value="month">Past Month</option>
+            <option value="year">Past Year</option>
+          </select>
+          <button
+            onClick={() => window.print()}
+            className="print:hidden flex items-center space-x-2 bg-dark-900 hover:bg-black text-gold-400 px-6 py-2.5 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto font-bold justify-center whitespace-nowrap"
+          >
+            <Download className="w-5 h-5" />
+            <span>Generate PDF Report</span>
+          </button>
+        </div>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Products Card */}
-        <div className="bg-blue-600 rounded-xl p-6 text-white relative overflow-hidden">
+        <div className="bg-gold-600 rounded-xl p-6 text-white relative overflow-hidden">
           <div className="absolute top-3 right-3 bg-white rounded-lg p-3">
-            <Package className="w-6 h-6 text-blue-600" />
+            <Package className="w-6 h-6 text-gold-600" />
           </div>
           <p className="text-5xl font-bold mb-1">{totalItems}</p>
-          <p className="text-blue-100 text-sm">Total Products</p>
+          <p className="text-gold-100 text-sm">Total Products</p>
         </div>
 
         {/* Low Stock Card */}
@@ -414,5 +477,125 @@ export function Analytics() {
         </div>
       </div>
     </div>
+
+    {/* PRINT VIEW (Only visible on print, perfectly formatted for 1 page) */}
+    <div className="hidden print:block bg-white text-gray-900 absolute top-0 left-0 right-0 p-8 w-[210mm] h-[297mm] mx-auto overflow-hidden">
+      <div className="border-b-2 border-dark-900 pb-4 mb-8">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-4xl font-black text-dark-900 uppercase tracking-tight">Dental IMS</h1>
+            <p className="text-xl text-gold-600 font-bold mt-1">Analytics Summary Report</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Report Period</p>
+            <p className="text-xl font-bold text-dark-900 capitalize">Past {reportPeriod}</p>
+            <p className="text-xs text-gray-400 mt-1">Generated: {new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Print Summary Metrics */}
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <p className="text-xs text-gray-500 font-bold uppercase">Estimated Expenses</p>
+          <p className="text-2xl font-black text-dark-900">${periodExpenses.toLocaleString()}</p>
+        </div>
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <p className="text-xs text-gray-500 font-bold uppercase">Procedures Done</p>
+          <p className="text-2xl font-black text-dark-900">{totalFilteredProcedures}</p>
+        </div>
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <p className="text-xs text-gray-500 font-bold uppercase">Items Low Stock</p>
+          <p className="text-2xl font-black text-red-600">{lowStockCount}</p>
+        </div>
+        <div className="p-4 border border-gray-200 rounded-lg">
+          <p className="text-xs text-gray-500 font-bold uppercase">Total Inventory Value</p>
+          <p className="text-2xl font-black text-dark-900">${totalValue.toLocaleString()}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-8">
+        {/* Top Procedures */}
+        <div>
+          <h3 className="text-lg font-bold text-dark-900 border-b border-gray-200 pb-2 mb-4">Frequent Procedures</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 uppercase">
+                <th className="pb-2">Procedure</th>
+                <th className="pb-2 text-right">Times Done</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredProcedureData.slice(0, 6).map((proc, i) => (
+                <tr key={i}>
+                  <td className="py-2 font-semibold text-dark-900">{proc.name}</td>
+                  <td className="py-2 text-right text-gray-600">{proc.count}</td>
+                </tr>
+              ))}
+              {filteredProcedureData.length === 0 && (
+                <tr><td colSpan={2} className="py-4 text-gray-400 italic">No procedures recorded.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Most Used Products */}
+        <div>
+          <h3 className="text-lg font-bold text-dark-900 border-b border-gray-200 pb-2 mb-4">Most Used Products</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 uppercase">
+                <th className="pb-2">Product Name</th>
+                <th className="pb-2 text-right">Qty Consumed</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {mostUsedProducts.map((prod, i) => (
+                <tr key={i}>
+                  <td className="py-2 font-semibold text-dark-900">{prod.name}</td>
+                  <td className="py-2 text-right text-gray-600">{prod.quantity} {prod.unit}</td>
+                </tr>
+              ))}
+              {mostUsedProducts.length === 0 && (
+                <tr><td colSpan={2} className="py-4 text-gray-400 italic">No products consumed.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Low Stock Items (Full Width) */}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold text-red-600 border-b border-red-200 pb-2 mb-4">Critical Action Required: Low Stock</h3>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-gray-500 uppercase">
+              <th className="pb-2">Product Name</th>
+              <th className="pb-2">Category</th>
+              <th className="pb-2 text-right">Current Stock</th>
+              <th className="pb-2 text-right">Threshold</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {inventory.filter(i => i.quantity <= i.lowStockThreshold).slice(0, 10).map((item, i) => (
+              <tr key={i}>
+                <td className="py-2 font-semibold text-dark-900">{item.productName}</td>
+                <td className="py-2 text-gray-600">{item.category}</td>
+                <td className="py-2 text-right font-bold text-red-600">{item.quantity} {item.unit}</td>
+                <td className="py-2 text-right text-gray-500">{item.lowStockThreshold} {item.unit}</td>
+              </tr>
+            ))}
+            {inventory.filter(i => i.quantity <= i.lowStockThreshold).length === 0 && (
+              <tr><td colSpan={4} className="py-4 text-gray-400 italic">No items are currently low on stock.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="mt-12 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
+        <p>This report was auto-generated by the Dental IMS system.</p>
+      </div>
+    </div>
+    </>
   );
 }

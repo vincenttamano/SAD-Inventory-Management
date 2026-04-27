@@ -97,14 +97,14 @@ export function Inventory() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Inventory Management</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark-900 tracking-tight">Inventory Management</h1>
           {userRole === 'staff' && (
             <p className="text-sm text-gray-500 mt-1">Add and restock inventory items</p>
           )}
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition w-full sm:w-auto justify-center"
+          className="flex items-center space-x-2 bg-dark-900 hover:bg-black text-gold-400 shadow-lg hover:-translate-y-0.5 px-4 py-2 rounded-lg transition w-full sm:w-auto justify-center"
         >
           <Plus className="w-5 h-5" />
           <span>Add Item</span>
@@ -113,11 +113,11 @@ export function Inventory() {
 
       {/* Quantity Adjustment Controls for Staff */}
       {!isAdmin && selectedItem && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-xl border border-blue-200 shadow-sm">
+        <div className="bg-gradient-to-r from-gold-50 to-gold-50 p-4 sm:p-6 rounded-xl border border-gold-200 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Package className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-gold-100 rounded-lg">
+                <Package className="w-6 h-6 text-gold-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Selected Item</p>
@@ -129,7 +129,7 @@ export function Inventory() {
             </div>
             <button
               onClick={handleQuickAdjust}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition shadow-sm w-full sm:w-auto justify-center"
+              className="flex items-center space-x-2 bg-dark-900 hover:bg-black text-gold-400 shadow-lg hover:-translate-y-0.5 px-6 py-3 rounded-lg transition shadow-sm w-full sm:w-auto justify-center"
             >
               <Edit2 className="w-5 h-5" />
               <span>Adjust Quantity</span>
@@ -140,7 +140,7 @@ export function Inventory() {
 
       {/* Empty State for Staff - No Item Selected */}
       {!isAdmin && !selectedItem && (
-        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 text-center">
+        <div className="bg-gray-50/80 backdrop-blur-sm p-6 rounded-xl border border-gray-200 text-center">
           <Package className="w-12 h-12 text-gray-400 mx-auto mb-2" />
           <p className="text-gray-600">Select an item from the table below to adjust its quantity</p>
         </div>
@@ -156,7 +156,7 @@ export function Inventory() {
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none"
             />
           </div>
           <div className="relative">
@@ -164,7 +164,7 @@ export function Inventory() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none appearance-none bg-white"
             >
               <option value="all">All Categories</option>
               {categories.map(category => (
@@ -179,7 +179,7 @@ export function Inventory() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50/80 backdrop-blur-sm">
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Product Name
@@ -221,8 +221,8 @@ export function Inventory() {
                     onClick={() => handleRowClick(item)}
                     className={`transition-colors ${
                       isSelected
-                        ? 'bg-blue-50 border-l-4 border-l-blue-500'
-                        : 'hover:bg-gray-50'
+                        ? 'bg-gold-50 border-l-4 border-l-blue-500'
+                        : 'hover:bg-gray-50/80 backdrop-blur-sm'
                     } ${!isAdmin ? 'cursor-pointer' : ''}`}
                   >
                     <td className="px-3 sm:px-6 py-4">
@@ -230,7 +230,7 @@ export function Inventory() {
                       <div className="md:hidden text-xs text-gray-500 mt-1">{item.category}</div>
                     </td>
                     <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gold-100 text-gold-800">
                         {item.category}
                       </span>
                     </td>
@@ -276,7 +276,7 @@ export function Inventory() {
                               e.stopPropagation();
                               handleEdit(item);
                             }}
-                            className="text-blue-600 hover:text-blue-800 transition p-1"
+                            className="text-gold-600 hover:text-gold-800 transition p-1"
                             title="Edit Item"
                           >
                             <Edit2 className="w-4 h-4" />
