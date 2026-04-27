@@ -10,7 +10,8 @@
   "recharts": "^2.10.0",
   "lucide-react": "^0.344.0",
   "sonner": "^1.5.0",
-  "web-vitals": "^2.1.4"
+  "web-vitals": "^2.1.4",
+  "@supabase/supabase-js": "^2.38.5"
 },
 "devDependencies": {
   "@types/react": "^18.2.55",
