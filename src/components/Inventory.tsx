@@ -190,6 +190,9 @@ export function Inventory() {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Quantity
                 </th>
+                <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price
+                </th>
                 <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date Created
                 </th>
@@ -237,6 +240,11 @@ export function Inventory() {
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-xs sm:text-sm text-gray-900">
                         {item.quantity} {item.unit}
+                      </div>
+                    </td>
+                    <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">
+                        ${item.price?.toFixed(2) || '0.00'}
                       </div>
                     </td>
                     <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">

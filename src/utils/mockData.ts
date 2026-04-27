@@ -9,6 +9,7 @@ export const mockInventoryItems: InventoryItem[] = [
     expiryDate: '2027-06-15',
     category: 'Anesthetics',
     lowStockThreshold: 10,
+    price: 25.50,
     dateCreated: '2024-01-15',
   },
   {
@@ -19,6 +20,7 @@ export const mockInventoryItems: InventoryItem[] = [
     expiryDate: '2026-12-31',
     category: 'PPE',
     lowStockThreshold: 50,
+    price: Math.floor(Math.random() * 50) + 5,
     dateCreated: '2024-01-20',
   },
   {
@@ -28,7 +30,8 @@ export const mockInventoryItems: InventoryItem[] = [
     unit: 'syringes',
     expiryDate: '2026-09-20',
     category: 'Restorative',
-    lowStockThreshold: 15,
+    lowStockThreshold: 50,
+    price: Math.floor(Math.random() * 50) + 5,
     dateCreated: '2024-02-05',
   },
   {
@@ -38,7 +41,8 @@ export const mockInventoryItems: InventoryItem[] = [
     unit: 'boxes',
     expiryDate: '2027-03-10',
     category: 'PPE',
-    lowStockThreshold: 30,
+    lowStockThreshold: 50,
+    price: Math.floor(Math.random() * 50) + 5,
     dateCreated: '2024-02-10',
   },
   {
@@ -49,6 +53,7 @@ export const mockInventoryItems: InventoryItem[] = [
     expiryDate: '2026-08-05',
     category: 'Disinfectants',
     lowStockThreshold: 10,
+    price: 25.50,
     dateCreated: '2024-03-01',
   },
   {
@@ -59,6 +64,7 @@ export const mockInventoryItems: InventoryItem[] = [
     expiryDate: '2028-01-15',
     category: 'Instruments',
     lowStockThreshold: 20,
+    price: 5.75,
     dateCreated: '2024-03-15',
   },
   {
@@ -68,7 +74,8 @@ export const mockInventoryItems: InventoryItem[] = [
     unit: 'packs',
     expiryDate: '2027-11-30',
     category: 'Consumables',
-    lowStockThreshold: 40,
+    lowStockThreshold: 50,
+    price: Math.floor(Math.random() * 50) + 5,
     dateCreated: '2024-04-01',
   },
   {
@@ -79,6 +86,7 @@ export const mockInventoryItems: InventoryItem[] = [
     expiryDate: '2026-07-22',
     category: 'Preventive',
     lowStockThreshold: 10,
+    price: 25.50,
     dateCreated: '2024-04-15',
   },
 ];

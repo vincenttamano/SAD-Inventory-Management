@@ -66,6 +66,17 @@ export function Usage() {
     ));
   };
 
+  const sendAdminNotificationEmail = (record: SimpleUsageRecord) => {
+    console.log(`[EMAIL DISPATCHED] To: Admin`);
+    console.log(`Subject: New Usage Recorded - ${record.procedure}`);
+    console.log(`Details: ${record.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ')}`);
+    
+    // Simulate sending email notification
+    setTimeout(() => {
+      alert(`Success! The Admin has been notified via email about the "${record.procedure}" usage.`);
+    }, 500);
+  };
+
   const handleSubmit = () => {
     if (selectedItems.length === 0) {
       alert('Please select at least one item');
@@ -135,6 +146,7 @@ export function Usage() {
       saveUsageHistory(usageHistory.map(r => r.id === editingRecordId ? newRecord : r));
     } else {
       saveUsageHistory([newRecord, ...usageHistory]);
+      sendAdminNotificationEmail(newRecord);
     }
 
     // Reset form

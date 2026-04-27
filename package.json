@@ -4,6 +4,8 @@
   "homepage": "https://vincenttamano.github.io/SAD-Inventory-Management",
   "private": true,
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.104.1",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, Package, BarChart3, LogOut, Menu, X,
-  ClipboardCheck, Activity, Users, Bell, AlertTriangle, Clock,
+  ClipboardCheck, Activity, Users, Bell, AlertTriangle, Clock, UserCog
 } from 'lucide-react';
 import { User, InventoryItem } from '../types';
 import { initializeInventory } from '../utils/mockData';
@@ -70,7 +70,7 @@ export function Layout() {
   useEffect(() => {
     const userData = localStorage.getItem('dentalClinicUser');
     if (!userData) {
-      navigate('/login');
+      navigate('/');
     } else {
       setUser(JSON.parse(userData));
     }
@@ -107,7 +107,7 @@ export function Layout() {
 
   const handleLogout = () => {
     localStorage.removeItem('dentalClinicUser');
-    navigate('/login');
+    navigate('/');
   };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
@@ -146,32 +146,39 @@ export function Layout() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-1">
-              <NavLink to="/" end className={navLinkClass}>
+              <NavLink to="/dashboard" end className={navLinkClass}>
                 <Home className="w-5 h-5" />
                 <span>{isAdmin ? 'Home' : 'Dashboard'}</span>
               </NavLink>
 
-              <NavLink to="/inventory" className={navLinkClass}>
+              <NavLink to="/dashboard/inventory" className={navLinkClass}>
                 <Package className="w-5 h-5" />
                 <span>Inventory</span>
               </NavLink>
 
-              <NavLink to="/usage" className={navLinkClass}>
+              <NavLink to="/dashboard/usage" className={navLinkClass}>
                 <ClipboardCheck className="w-5 h-5" />
                 <span>Usage</span>
               </NavLink>
 
               {isAdmin && (
-                <NavLink to="/analytics" className={navLinkClass}>
+                <NavLink to="/dashboard/analytics" className={navLinkClass}>
                   <BarChart3 className="w-5 h-5" />
                   <span>Analytics</span>
                 </NavLink>
               )}
 
               {isAdmin && (
-                <NavLink to="/patient-management" className={navLinkClass}>
+                <NavLink to="/dashboard/patient-management" className={navLinkClass}>
                   <Users className="w-5 h-5" />
                   <span>Patients</span>
+                </NavLink>
+              )}
+
+              {isAdmin && (
+                <NavLink to="/dashboard/users" className={navLinkClass}>
+                  <UserCog className="w-5 h-5" />
+                  <span>Staff</span>
                 </NavLink>
               )}
 
@@ -275,7 +282,7 @@ export function Layout() {
                     {alerts.length > 0 && (
                       <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100">
                         <button
-                          onClick={() => { navigate('/inventory'); setNotifOpen(false); }}
+                          onClick={() => { navigate('/dashboard/inventory'); setNotifOpen(false); }}
                           className="w-full text-xs text-gold-600 hover:text-gold-800 font-medium transition text-center"
                         >
                           View Inventory →
@@ -378,32 +385,39 @@ export function Layout() {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-dark-800 bg-dark-900">
             <div className="px-4 py-3 space-y-1">
-              <NavLink to="/" end onClick={closeMobileMenu} className={mobileNavLinkClass}>
+              <NavLink to="/dashboard" end onClick={closeMobileMenu} className={mobileNavLinkClass}>
                 <Home className="w-5 h-5" />
                 <span>{isAdmin ? 'Home' : 'Dashboard'}</span>
               </NavLink>
 
-              <NavLink to="/inventory" onClick={closeMobileMenu} className={mobileNavLinkClass}>
+              <NavLink to="/dashboard/inventory" onClick={closeMobileMenu} className={mobileNavLinkClass}>
                 <Package className="w-5 h-5" />
                 <span>Inventory</span>
               </NavLink>
 
-              <NavLink to="/usage" onClick={closeMobileMenu} className={mobileNavLinkClass}>
+              <NavLink to="/dashboard/usage" onClick={closeMobileMenu} className={mobileNavLinkClass}>
                 <ClipboardCheck className="w-5 h-5" />
                 <span>Usage</span>
               </NavLink>
 
               {isAdmin && (
-                <NavLink to="/analytics" onClick={closeMobileMenu} className={mobileNavLinkClass}>
+                <NavLink to="/dashboard/analytics" onClick={closeMobileMenu} className={mobileNavLinkClass}>
                   <BarChart3 className="w-5 h-5" />
                   <span>Analytics</span>
                 </NavLink>
               )}
 
               {isAdmin && (
-                <NavLink to="/patient-management" onClick={closeMobileMenu} className={mobileNavLinkClass}>
+                <NavLink to="/dashboard/patient-management" onClick={closeMobileMenu} className={mobileNavLinkClass}>
                   <Users className="w-5 h-5" />
                   <span>Patients</span>
+                </NavLink>
+              )}
+
+              {isAdmin && (
+                <NavLink to="/dashboard/users" onClick={closeMobileMenu} className={mobileNavLinkClass}>
+                  <UserCog className="w-5 h-5" />
+                  <span>Staff</span>
                 </NavLink>
               )}
 

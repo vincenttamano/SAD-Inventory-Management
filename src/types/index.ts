@@ -6,6 +6,7 @@ export interface InventoryItem {
   expiryDate: string;
   category: string;
   lowStockThreshold: number;
+  price: number;
   dateCreated: string;
 }
 

@@ -1,6 +1,6 @@
 # Dental IMS
 
-Dental Inventory Management System built with React, TypeScript, Create React App, and Tailwind CSS. 
+Dental Inventory Management System built with React, TypeScript, Create React App, and Tailwind CSS.
 
 This application provides a comprehensive suite of tools for managing dental clinic operations, blending a modern **Grey and Gold** design aesthetic with robust functionality.
 
@@ -66,7 +66,27 @@ The output is generated in the `build/` folder.
 
 ## Architecture & Data
 
-Currently, the application relies on the browser's `localStorage` for data persistence. An Entity-Relationship Diagram (ERD) defining the data models (Users, Inventory Items, Usage Records) has been documented in `dental_system_erd.md`.
+The application uses **Supabase (PostgreSQL)** as the backend database with real-time data synchronization. Authentication is handled through direct User table verification.
+
+### Database Tables
+
+| Table           | Purpose                                                                                                                           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **User**        | Staff credentials and role management (admin/staff). Supports login via email or username.                                        |
+| **Inventory**   | Tracks dental supplies with quantity, pricing, expiration dates, and low-stock thresholds. Auto-triggers restock/adjustment logs. |
+| **Patient**     | Records patient treatment visits and consent information, linked to usage records.                                                |
+| **Usage**       | Tracks supply consumption per patient treatment. Auto-deducts inventory and logs consumption transactions.                        |
+| **Transaction** | Immutable audit log of all inventory movements (restock, consumption, adjustment, expiration).                                    |
+| **StockAlerts** | Automatically generated alerts when inventory falls below defined thresholds.                                                     |
+
+**Key Features:**
+
+- **Automatic Triggers**: Database triggers auto-log transactions, enforce stock validation, and deduplicate alerts
+- **Audit Trail**: Every inventory change is permanently recorded in the Transaction table
+- **Cost Tracking**: Historical pricing preserved at time of consumption for accurate financial reporting
+- **Data Integrity**: Foreign keys prevent orphaned records; constraints block invalid operations (e.g., negative stock)
+
+For complete table documentation, see **[DATABASE_TABLES_DOCUMENTATION.md](DATABASE_TABLES_DOCUMENTATION.md)** which includes column definitions, relationships, trigger behavior, and production migration notes.
 
 ## Troubleshooting
 

@@ -54,6 +54,7 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
     expiryDate: '',
     category: 'Consumables',
     lowStockThreshold: 10,
+    price: 0,
     dateCreated: new Date().toISOString().split('T')[0],
   });
 
@@ -66,6 +67,7 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
         expiryDate: item.expiryDate,
         category: item.category,
         lowStockThreshold: item.lowStockThreshold,
+        price: item.price || 0,
         dateCreated: item.dateCreated,
       });
       setCategories((prev) =>
@@ -87,7 +89,11 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'quantity' || name === 'lowStockThreshold' ? Number(value) : value,
+      [name]: name === 'quantity' || name === 'lowStockThreshold' 
+        ? parseInt(value, 10) || 0
+        : name === 'price' 
+        ? parseFloat(value) || 0
+        : value,
     }));
   };
 
@@ -269,6 +275,24 @@ export function AddEditModal({ item, onSave, onClose }: AddEditModalProps) {
                 required
                 min="0"
                 value={formData.lowStockThreshold}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label htmlFor="price" className="block text-sm font-semibold text-dark-900 mb-2">
+                Unit Price ($)
+              </label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                required
+                min="0"
+                step="0.01"
+                value={formData.price}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
               />
