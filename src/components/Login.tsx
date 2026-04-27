@@ -104,7 +104,7 @@ export function Login() {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-8">
          
-            <img src="public/logo.png" alt="JT Dental Clinic" className="w-40 h-40" />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="JT Dental Clinic" className="w-40 h-40" />
             <br />
           <p className="text-gray-600 text-xl text- text-center">Inventory Management System</p>
         </div>
