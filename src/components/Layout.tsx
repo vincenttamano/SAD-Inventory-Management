@@ -132,10 +132,10 @@ export function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Brand */}
-            <div className="flex items-center space-x-2">
-              <Activity className="w-8 h-8 text-gold-600" />
+            <div className="flex items-center space-x-3">
+              <img src="public/logo.png" alt="JT Dental Clinic" className="w-8 h-8 rounded-full" />
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-100">Dental Clinic</span>
+                <span className="text-xl font-bold text-gray-100">JT Alunan Dental</span>
                 {user && (
                   <span className="text-xs text-gray-400">
                     {user.role === 'admin' ? 'Admin' : 'Staff'} — {user.name}
@@ -206,10 +206,10 @@ export function Layout() {
 
                 {/* Dropdown panel */}
                 {notifOpen && (
-                  <div className="absolute right-0 top-12 w-80 bg-dark-900 rounded-xl shadow-xl border border-dark-800 text-white z-50 overflow-hidden">
+                  <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-dark-800 text-white z-50 overflow-hidden">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
-                      <span className="text-sm font-semibold text-gray-200 flex items-center gap-2">
+                      <span className="text-sm font-semibold text-black flex items-center gap-2">
                         <Bell className="w-4 h-4 text-orange-500" />
                         Alerts
                         {badgeCount > 0 && (
@@ -259,7 +259,7 @@ export function Layout() {
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-semibold text-gray-200 truncate">
+                              <p className="text-xs font-semibold text-black truncate">
                                 {alert.productName}
                               </p>
                               <p className="text-xs text-gray-400 mt-0.5">{alert.message}</p>

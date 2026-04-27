@@ -103,17 +103,16 @@ export function Login() {
     <div className="min-h-screen bg-gradient-to-br from-gold-50 to-blue-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-gold-600 p-3 rounded-full mb-4">
-            <Activity className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Dental Clinic</h1>
-          <p className="text-gray-600 mt-2">Inventory Management System</p>
+         
+            <img src="public/logo.png" alt="JT Dental Clinic" className="w-40 h-40" />
+            <br />
+          <p className="text-gray-600 text-xl text- text-center">Inventory Management System</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           {/* Role Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-bold text-gray-700  mb-3">
               Select Role
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -161,7 +160,7 @@ export function Login() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
-                placeholder="e.g. admin@dentalclinic.com or Dr. Admin"
+                placeholder="username"
               />
             </div>
           </div>
