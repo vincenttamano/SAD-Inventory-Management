@@ -499,21 +499,41 @@ export function UsagePage() {
                 <div className="max-h-60 overflow-y-auto border border-gray-200 rounded-xl bg-white shadow-inner">
                   {filteredInventory.map(item => {
                     const isSelected = selectedItems.some(si => si.itemId === item.id);
+                    const isOutOfStock = item.quantity === 0;
+                    const isLowStock = item.quantity > 0 && item.quantity <= item.lowStockThreshold;
+                    const canAdd = item.quantity > 0;
+
                     return (
                       <div
                         key={item.id}
-                        className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                        className={`p-4 border-b border-gray-100 transition-colors ${
+                          isOutOfStock
+                            ? 'bg-gray-50 cursor-not-allowed opacity-60'
+                            : canAdd
+                            ? 'hover:bg-gray-50 cursor-pointer'
+                            : 'hover:bg-gray-50 cursor-pointer'
+                        } ${
                           isSelected ? 'bg-gold-50 border-l-4 border-l-gold-500' : ''
                         }`}
-                        onClick={() => !isSelected && handleAddItem(item.id)}
+                        onClick={() => canAdd && !isSelected && handleAddItem(item.id)}
                       >
                         <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm font-bold text-dark-900">{item.productName}</p>
+                          <div className="flex-1">
+                            <p className={`text-sm font-bold ${isOutOfStock ? 'text-gray-400' : 'text-dark-900'}`}>
+                              {item.productName}
+                            </p>
                             <p className="text-xs font-medium text-gray-500 mt-0.5">{item.category}</p>
+                            {isLowStock && (
+                              <p className="text-xs font-bold text-orange-600 mt-1.5">⚠️ Low Stock</p>
+                            )}
+                            {isOutOfStock && (
+                              <p className="text-xs font-bold text-red-600 mt-1.5">Out of Stock</p>
+                            )}
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-semibold text-dark-900">{item.quantity} <span className="text-gray-500 font-normal">{item.unit}</span></p>
+                            <p className={`text-sm font-semibold ${isOutOfStock ? 'text-gray-400' : 'text-dark-900'}`}>
+                              {item.quantity} <span className="text-gray-500 font-normal">{item.unit}</span>
+                            </p>
                             {isSelected && (
                               <p className="text-xs font-bold text-gold-600 mt-0.5">Selected</p>
                             )}
