@@ -13,14 +13,20 @@ export function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setSessionReady(true);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+useEffect(() => {
+  // Check if already in a recovery session (page reload case)
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) setSessionReady(true);
+  });
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+      setSessionReady(true);
+    }
+  });
+
+  return () => subscription.unsubscribe();
+}, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
