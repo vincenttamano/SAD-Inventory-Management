@@ -94,7 +94,7 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
   }
 
 const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-  redirectTo: `https://vincenttamano.github.io/JT-Inventory/`,
+redirectTo: `https://vincenttamano.github.io/JT-Inventory/#/reset-password`,
 });
 
   if (error) {
