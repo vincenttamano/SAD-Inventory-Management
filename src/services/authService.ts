@@ -93,9 +93,9 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
     throw new Error('Please enter a valid email address.');
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-    redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}#/reset-password`,
-  });
+const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+  redirectTo: `https://vincenttamano.github.io/JT-Inventory/`,
+});
 
   if (error) {
     throw error;
