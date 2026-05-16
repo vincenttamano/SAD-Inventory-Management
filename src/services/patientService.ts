@@ -49,6 +49,7 @@ function mapRecord(patient: PatientRow, items: UsageItemRow[]): UsageRecord {
       productName: item.product_name_snapshot || '',
       quantityUsed: item.quantity_used,
       unit: item.unit || '',
+      pricePerUsage: item.price_per_usage ?? undefined,
     })),
     recordedBy: patient.recorded_by_user_id?.toString() || 'Unknown',
   };
@@ -122,6 +123,10 @@ export async function createPatientUsageRecord(input: PatientRecordInput): Promi
     .select();
 
   if (usageError) {
+    await supabase
+      .from('patient')
+      .delete()
+      .eq('patient_id', patientRow.patient_id);
     throw usageError;
   }
 

@@ -46,7 +46,7 @@ export function UsagePage() {
   };
 
   const handleQuantityChange = (itemId: string, quantity: number) => {
-    setSelectedItems(selectedItems.map(item => 
+    setSelectedItems(selectedItems.map(item =>
       item.itemId === itemId ? { ...item, quantity: Math.max(1, quantity) } : item
     ));
   };
@@ -55,7 +55,7 @@ export function UsagePage() {
     console.log(`[EMAIL DISPATCHED] To: Admin`);
     console.log(`Subject: New Usage Recorded - ${record.procedure}`);
     console.log(`Details: ${record.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ')}`);
-    
+
     // Simulate sending email notification
     setTimeout(() => {
       alert(`Success! The Admin has been notified via email about the "${record.procedure}" usage.`);
@@ -78,11 +78,30 @@ export function UsagePage() {
       return;
     }
 
+    const oldRecord = editingRecordId
+      ? usageHistory.find(r => r.id === editingRecordId)
+      : null;
+    const insufficientStock = selectedItems.find(selectedItem => {
+      const inventoryItem = inventory.find(item => item.id === selectedItem.itemId);
+      if (!inventoryItem) return true;
+
+      const oldQuantity = oldRecord?.items
+        .filter(item => item.itemId === selectedItem.itemId)
+        .reduce((sum, item) => sum + item.quantity, 0) || 0;
+
+      return selectedItem.quantity > inventoryItem.quantity + oldQuantity;
+    });
+
+    if (insufficientStock) {
+      const item = inventory.find(i => i.id === insufficientStock.itemId);
+      alert(`Insufficient stock for ${item?.productName || 'selected item'}.`);
+      return;
+    }
+
     let updatedInventory = [...inventory];
 
     // If editing, first refund the old quantities back to inventory
     if (editingRecordId) {
-      const oldRecord = usageHistory.find(r => r.id === editingRecordId);
       if (oldRecord) {
         oldRecord.items.forEach(oldItem => {
           const invItem = updatedInventory.find(i => i.id === oldItem.itemId);
@@ -126,15 +145,13 @@ export function UsagePage() {
     try {
       if (editingRecordId) {
         await deleteSimpleUsageRecord(editingRecordId);
-      }
-
-      const savedRecord = await createSimpleUsageRecord(recordPayload, getCurrentUser()?.id);
-      await saveInventory(updatedInventory);
-      setInventory(updatedInventory);
-
-      if (editingRecordId) {
+        const savedRecord = await createSimpleUsageRecord(recordPayload, getCurrentUser()?.id);
+        await saveInventory(updatedInventory);
+        setInventory(updatedInventory);
         setUsageHistory([savedRecord, ...usageHistory.filter(r => r.id !== editingRecordId)]);
       } else {
+        const savedRecord = await createSimpleUsageRecord(recordPayload, getCurrentUser()?.id);
+        setInventory(await getInventory());
         setUsageHistory([savedRecord, ...usageHistory]);
         sendAdminNotificationEmail(savedRecord);
       }
@@ -357,7 +374,7 @@ export function UsagePage() {
               ))}
             </tbody>
           </table>
-          
+
           {usageHistory.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               No usage records yet
@@ -524,7 +541,7 @@ export function UsagePage() {
                             </p>
                             <p className="text-xs font-medium text-gray-500 mt-0.5">{item.category}</p>
                             {isLowStock && (
-                              <p className="text-xs font-bold text-orange-600 mt-1.5">⚠️ Low Stock</p>
+                              <p className="text-xs font-bold text-orange-600 mt-1.5">Warning: Low Stock</p>
                             )}
                             {isOutOfStock && (
                               <p className="text-xs font-bold text-red-600 mt-1.5">Out of Stock</p>

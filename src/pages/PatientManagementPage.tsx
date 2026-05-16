@@ -162,7 +162,7 @@ export function PatientManagementPage() {
             Patient Management
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Search, edit, and manage patient records — Admin only
+            Search, edit, and manage patient records - Admin only
           </p>
         </div>
         <div className="flex items-center gap-2 bg-gold-50 border border-gold-200 text-gold-700 px-4 py-2 rounded-xl text-sm font-medium">
@@ -179,7 +179,7 @@ export function PatientManagementPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by patient name, ID, procedure, or items used…"
+            placeholder="Search by patient name, ID, procedure, or items used..."
             className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm"
           />
           {search && (
@@ -316,7 +316,7 @@ export function PatientManagementPage() {
                           />
                         ) : (
                           <span className="inline-flex items-center gap-1 text-sm text-gray-700 bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-0.5 rounded-full font-medium">
-                            {record.procedure || '—'}
+                            {record.procedure || '-'}
                           </span>
                         )}
                       </td>
@@ -329,7 +329,7 @@ export function PatientManagementPage() {
                             {totalItemsUsed(record)} units
                           </span>
                           <span className="text-xs text-gray-400 max-w-xs truncate">
-                            {itemNames(record) || '—'}
+                            {itemNames(record) || '-'}
                           </span>
                         </div>
                       </td>
@@ -441,7 +441,7 @@ export function PatientManagementPage() {
                   ? 'Items Used'
                   : 'Date'}
               </span>{' '}
-              ({sortDir === 'asc' ? 'A → Z' : 'Z → A'})
+              ({sortDir === 'asc' ? 'A -> Z' : 'Z -> A'})
             </span>
           </div>
         )}

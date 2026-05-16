@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home, Package, BarChart3, LogOut, Menu, X,
   ClipboardCheck, Activity, Users, Bell, AlertTriangle, Clock, UserCog
@@ -11,6 +11,7 @@ import { AlertNotification, buildInventoryAlerts } from '../../utils/alertCalcul
 
 export function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [alerts, setAlerts] = useState<AlertNotification[]>([]);
@@ -23,8 +24,12 @@ export function AppLayout() {
       navigate('/');
     } else {
       setUser(currentUser);
+      const adminOnlyPaths = ['/dashboard/analytics', '/dashboard/patient-management', '/dashboard/users'];
+      if (currentUser.role !== 'admin' && adminOnlyPaths.includes(location.pathname)) {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [navigate]);
+  }, [location.pathname, navigate]);
 
   // Load inventory and compute alerts
   useEffect(() => {
@@ -89,7 +94,7 @@ export function AppLayout() {
                 <span className="text-xl font-bold text-gray-100">JT Alunan Dental</span>
                 {user && (
                   <span className="text-xs text-gray-400">
-                    {user.role === 'admin' ? 'Admin' : 'Staff'} — {user.name}
+                    {user.role === 'admin' ? 'Admin' : 'Staff'} - {user.name}
                   </span>
                 )}
               </div>
@@ -182,7 +187,7 @@ export function AppLayout() {
                       {alerts.length === 0 ? (
                         <div className="px-4 py-8 text-center">
                           <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                          <p className="text-sm text-gray-400">All good — no alerts right now!</p>
+                          <p className="text-sm text-gray-400">All good - no alerts right now!</p>
                         </div>
                       ) : (
                         alerts.map((alert) => (
@@ -236,7 +241,7 @@ export function AppLayout() {
                           onClick={() => { navigate('/dashboard/inventory'); setNotifOpen(false); }}
                           className="w-full text-xs text-gold-600 hover:text-gold-800 font-medium transition text-center"
                         >
-                          View Inventory →
+                          View Inventory
                         </button>
                       </div>
                     )}
@@ -322,10 +327,10 @@ export function AppLayout() {
             {alerts.length > 0 && (
               <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
                 <button
-                  onClick={() => { navigate('/inventory'); setNotifOpen(false); }}
+                  onClick={() => { navigate('/dashboard/inventory'); setNotifOpen(false); }}
                   className="text-xs text-gold-600 font-medium"
                 >
-                  View Inventory →
+                  View Inventory
                 </button>
               </div>
             )}

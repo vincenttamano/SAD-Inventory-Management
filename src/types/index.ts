@@ -53,6 +53,7 @@ export interface UsageItem {
   productName: string;
   quantityUsed: number;
   unit: string;
+  pricePerUsage?: number;
 }
 
 // Simple usage record for staff (without patient details)

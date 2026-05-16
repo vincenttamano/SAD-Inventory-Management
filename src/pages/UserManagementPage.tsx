@@ -4,7 +4,7 @@ import { UserRole } from '../types';
 import { LocalUser, createUser, deleteUser, getUsers } from '../services/userService';
 
 export function UserManagementPage() {
-  
+
   const [users, setUsers] = useState<LocalUser[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'staff' as UserRole });
@@ -95,18 +95,18 @@ export function UserManagementPage() {
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-900">Create Staff Account</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-900">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-900">X</button>
             </div>
 
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                 <div className="relative">
                   <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-gold-500 outline-none" placeholder="e.g. Jane Doe" />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                 <div className="relative">

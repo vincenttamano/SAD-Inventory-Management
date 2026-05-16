@@ -10,10 +10,11 @@ interface LoginParams {
 
 interface SupabaseUserRow {
   user_id: number;
-  auth_user_id: string;
+  auth_user_id: string | null;
   username: string;
   email: string;
   role: UserRole;
+  password: string | null;
 }
 
 export function getCurrentUser(): User | null {
@@ -31,15 +32,21 @@ export function clearCurrentUser(): void {
 
 export async function loginWithCredentials({ identifier, password, role }: LoginParams): Promise<User> {
   const loginIdentifier = identifier.trim();
-  const loginPassword = password.trim();
+  const loginPassword = password;
 
-  if (!loginIdentifier || !loginPassword) {
+  if (!loginIdentifier || !loginPassword.trim()) {
     throw new Error('Please enter both your email/username and password.');
   }
 
-  const loginEmail = loginIdentifier.includes('@')
+  const storedProfile = await getUserForIdentifier(loginIdentifier);
+
+  if (storedProfile?.password && storedProfile.password === loginPassword) {
+    return completeLogin(storedProfile, role);
+  }
+
+  const loginEmail = storedProfile?.email || (loginIdentifier.includes('@')
     ? loginIdentifier
-    : await getEmailForUsername(loginIdentifier);
+    : await getEmailForUsername(loginIdentifier));
 
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email: loginEmail,
@@ -47,7 +54,7 @@ export async function loginWithCredentials({ identifier, password, role }: Login
   });
 
   if (authError) {
-    throw authError;
+    throw new Error('Invalid login credentials');
   }
 
   if (!authData.user) {
@@ -56,7 +63,7 @@ export async function loginWithCredentials({ identifier, password, role }: Login
 
   const { data: profile, error: profileError } = await supabase
     .from('users')
-    .select('user_id, auth_user_id, username, email, role')
+    .select('user_id, auth_user_id, username, email, role, password')
     .eq('auth_user_id', authData.user.id)
     .limit(1)
     .maybeSingle();
@@ -65,12 +72,23 @@ export async function loginWithCredentials({ identifier, password, role }: Login
     throw profileError;
   }
 
-  if (!profile) {
-    throw new Error('Login succeeded, but no matching user profile was found. Link this Auth user to public.users.auth_user_id.');
+  const linkedProfile = (profile || storedProfile) as SupabaseUserRow | null;
+
+  if (!linkedProfile) {
+    throw new Error('Login succeeded, but no matching user profile was found.');
   }
 
-  const user = profile as SupabaseUserRow;
+  if (!linkedProfile.auth_user_id) {
+    await supabase
+      .from('users')
+      .update({ auth_user_id: authData.user.id })
+      .eq('user_id', linkedProfile.user_id);
+  }
 
+  return completeLogin(linkedProfile, role);
+}
+
+function completeLogin(user: SupabaseUserRow, role: UserRole): User {
   if (user.role !== role) {
     throw new Error('Invalid role selection for this user.');
   }
@@ -117,16 +135,27 @@ export async function updatePassword(newPassword: string): Promise<void> {
 }
 
 async function getEmailForUsername(username: string): Promise<string> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('email')
-    .ilike('username', username)
-    .limit(1)
-    .maybeSingle();
+  const data = await getUserForIdentifier(username);
 
-  if (error || !data?.email) {
+  if (!data?.email) {
     throw new Error('User not found.');
   }
 
   return data.email;
+}
+
+async function getUserForIdentifier(identifier: string): Promise<SupabaseUserRow | null> {
+  const column = identifier.includes('@') ? 'email' : 'username';
+  const { data, error } = await supabase
+    .from('users')
+    .select('user_id, auth_user_id, username, email, role, password')
+    .ilike(column, identifier)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as SupabaseUserRow | null) || null;
 }

@@ -106,19 +106,19 @@ export function DashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <StatCard 
-            title="Total Items" 
-            value={inventory.length} 
-            icon={Package} 
-            colorClass="text-gold-500" 
+          <StatCard
+            title="Total Items"
+            value={inventory.length}
+            icon={Package}
+            colorClass="text-gold-500"
             bgClass="bg-dark-900"
             isDark={true}
           />
-          <StatCard 
-            title="Low Stock Alert" 
-            value={lowStockItems.length} 
-            icon={AlertTriangle} 
-            colorClass="text-red-500" 
+          <StatCard
+            title="Low Stock Alert"
+            value={lowStockItems.length}
+            icon={AlertTriangle}
+            colorClass="text-red-500"
             bgClass="bg-red-50"
           />
         </div>
@@ -133,10 +133,10 @@ export function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                 <XAxis dataKey="month" stroke="#888" style={{ fontSize: '12px' }} axisLine={false} tickLine={false} />
                 <YAxis stroke="#888" style={{ fontSize: '12px' }} axisLine={false} tickLine={false} />
-                <Tooltip 
+                <Tooltip
                   cursor={{ fill: '#f6f6f6' }}
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
+                  contentStyle={{
+                    backgroundColor: '#fff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '12px',
                     color: '#1E1E1E',
@@ -145,7 +145,7 @@ export function DashboardPage() {
                   itemStyle={{ color: '#1E1E1E', fontWeight: 600 }}
                   labelStyle={{ color: '#6b7280', marginBottom: '4px' }}
                 />
-                <Bar dataKey="amount" fill="#cf984d" name="Cost (₱)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="amount" fill="#cf984d" name="Cost (PHP )" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -169,9 +169,9 @@ export function DashboardPage() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '12px',
                     color: '#1E1E1E',
@@ -198,33 +198,33 @@ export function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <StatCard 
-          title="Total Items" 
-          value={inventory.length} 
-          icon={Package} 
-          colorClass="text-gold-400" 
+        <StatCard
+          title="Total Items"
+          value={inventory.length}
+          icon={Package}
+          colorClass="text-gold-400"
           bgClass="bg-dark-800"
           isDark={true}
         />
-        <StatCard 
-          title="Low Stock" 
-          value={lowStockItems.length} 
-          icon={AlertTriangle} 
-          colorClass="text-orange-500" 
+        <StatCard
+          title="Low Stock"
+          value={lowStockItems.length}
+          icon={AlertTriangle}
+          colorClass="text-orange-500"
           bgClass="bg-orange-50"
         />
-        <StatCard 
-          title="Expiring Soon" 
-          value={expiringItems.length} 
-          icon={Calendar} 
-          colorClass="text-red-500" 
+        <StatCard
+          title="Expiring Soon"
+          value={expiringItems.length}
+          icon={Calendar}
+          colorClass="text-red-500"
           bgClass="bg-red-50"
         />
-        <StatCard 
-          title="This Month" 
-          value={`₱${thisMonthExpense.toLocaleString()}`} 
-          icon={TrendingUp} 
-          colorClass="text-green-500" 
+        <StatCard
+          title="This Month"
+          value={`PHP ${thisMonthExpense.toLocaleString()}`}
+          icon={TrendingUp}
+          colorClass="text-green-500"
           bgClass="bg-green-50"
         />
       </div>
@@ -256,9 +256,9 @@ export function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
               <XAxis dataKey="month" stroke="#888" style={{ fontSize: '12px' }} axisLine={false} tickLine={false} />
               <YAxis stroke="#888" style={{ fontSize: '12px' }} axisLine={false} tickLine={false} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#fff', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',
                   borderRadius: '12px',
                   color: '#1E1E1E',
@@ -267,10 +267,10 @@ export function DashboardPage() {
                 itemStyle={{ color: '#1E1E1E', fontWeight: 600 }}
                 labelStyle={{ color: '#6b7280', marginBottom: '4px' }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="amount" 
-                stroke="#cf984d" 
+              <Line
+                type="monotone"
+                dataKey="amount"
+                stroke="#cf984d"
                 strokeWidth={3}
                 dot={{ fill: '#1E1E1E', stroke: '#cf984d', strokeWidth: 2, r: 5 }}
                 activeDot={{ r: 7, fill: '#cf984d' }}
@@ -298,9 +298,9 @@ export function DashboardPage() {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#fff', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',
                   borderRadius: '12px',
                   color: '#1E1E1E',

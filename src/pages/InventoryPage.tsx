@@ -153,7 +153,7 @@ export function InventoryPage() {
                 <p className="text-sm text-gray-600">Selected Item</p>
                 <h3 className="font-semibold text-gray-900">{selectedItem.productName}</h3>
                 <p className="text-sm text-gray-500">
-                  Current: {selectedItem.quantity} {selectedItem.unit} • {selectedItem.category}
+                  Current: {selectedItem.quantity} {selectedItem.unit} - {selectedItem.category}
                 </p>
               </div>
             </div>
@@ -274,7 +274,7 @@ export function InventoryPage() {
                     </td>
                     <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                       <div className="text-xs sm:text-sm text-gray-900">
-                        ₱{item.price?.toFixed(2) || '0.00'}
+                        PHP {item.price?.toFixed(2) || '0.00'}
                       </div>
                     </td>
                     <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -337,7 +337,7 @@ export function InventoryPage() {
               })}
             </tbody>
           </table>
-          
+
           {filteredInventory.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               No items found

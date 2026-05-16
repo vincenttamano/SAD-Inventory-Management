@@ -3,7 +3,7 @@ import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { Package, TrendingUp, AlertCircle, ShieldAlert, ShoppingBag, Download } from 'lucide-react';
+import { Package, TrendingUp, AlertCircle, ShieldAlert, Download } from 'lucide-react';
 import { InventoryItem, UsageRecord } from '../types';
 import { getInventory } from '../services/inventoryService';
 import { getCurrentUser } from '../services/authService';
@@ -62,11 +62,21 @@ export function AnalyticsPage() {
     return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
   }).length;
 
-  // Calculate total value (mock prices)
-  const totalValue = inventory.reduce((sum, item) => {
-    const mockPrice = item.quantity * 25; // Mock price calculation
-    return sum + mockPrice;
-  }, 0);
+  const inventoryPriceById = new Map(inventory.map((item) => [item.id, item.price || 0]));
+  const getUsageCost = (record: UsageRecord) =>
+    record.items.reduce((sum, item) => {
+      const unitPrice = item.pricePerUsage ?? inventoryPriceById.get(item.productId) ?? 0;
+      return sum + item.quantityUsed * unitPrice;
+    }, 0);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: 'PHP',
+      minimumFractionDigits: 2,
+    }).format(value);
+
+  const totalValue = inventory.reduce((sum, item) => sum + item.quantity * (item.price || 0), 0);
 
   // Category data for bar chart
   const categoryData = inventory.reduce((acc, item) => {
@@ -113,21 +123,20 @@ export function AnalyticsPage() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 8);
 
-  // Monthly expenses data (mock)
-  const monthlyExpensesData = [
-    { month: 'Jan', amount: 4200 },
-    { month: 'Feb', amount: 3800 },
-    { month: 'Mar', amount: 4500 },
-    { month: 'Apr', amount: 3900 },
-    { month: 'May', amount: 4700 },
-    { month: 'Jun', amount: 5100 },
-    { month: 'Jul', amount: 4800 },
-    { month: 'Aug', amount: 5200 },
-    { month: 'Sep', amount: 4900 },
-    { month: 'Oct', amount: 5300 },
-    { month: 'Nov', amount: 5000 },
-    { month: 'Dec', amount: 5400 },
-  ];
+  const monthlyUsageCostData = Array.from(
+    patientUsageHistory.reduce((acc, record) => {
+      const date = new Date(record.date);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+      const current = acc.get(key) || { key, month: label, amount: 0 };
+      current.amount += getUsageCost(record);
+      acc.set(key, current);
+      return acc;
+    }, new Map<string, { key: string; month: string; amount: number }>())
+  )
+    .map(([, value]) => value)
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .slice(-12);
 
   // Category summary data
   const categorySummary = inventory.reduce((acc, item) => {
@@ -136,17 +145,19 @@ export function AnalyticsPage() {
 
     if (existing) {
       existing.products += 1;
+      existing.value += item.quantity * (item.price || 0);
       if (isLowStock) existing.lowStock += 1;
     } else {
       acc.push({
         category: item.category,
         products: 1,
         lowStock: isLowStock ? 1 : 0,
+        value: item.quantity * (item.price || 0),
         color: getCategoryColor(item.category)
       });
     }
     return acc;
-  }, [] as { category: string; products: number; lowStock: number; color: string }[]);
+  }, [] as { category: string; products: number; lowStock: number; value: number; color: string }[]);
 
   // Helper function to get category colors
   function getCategoryColor(category: string): string {
@@ -202,7 +213,7 @@ export function AnalyticsPage() {
   }, [] as { name: string; count: number }[]).sort((a, b) => b.count - a.count).slice(0, 6);
 
   const totalFilteredProcedures = filteredProcedureData.reduce((sum, proc) => sum + proc.count, 0);
-  const periodExpenses = reportPeriod === 'week' ? 1200 : (reportPeriod === 'month' ? 4500 : 54000); // Mock
+  const periodExpenses = filteredHistory.reduce((sum, record) => sum + getUsageCost(record), 0);
 
   return (
     <>
@@ -237,7 +248,7 @@ export function AnalyticsPage() {
             <div className="absolute top-3 right-3 bg-white rounded-lg p-3">
               <Package className="w-6 h-6 text-gold-600" />
             </div>
-            <p className="text-5xl font-bold mb-1">{totalItems}</p>
+            <p className="text-3xl font-bold mb-1">{totalItems}</p>
             <p className="text-gold-100 text-sm">Total Products</p>
           </div>
 
@@ -246,7 +257,7 @@ export function AnalyticsPage() {
             <div className="absolute top-3 right-3 bg-white rounded-lg p-3">
               <TrendingUp className="w-6 h-6 text-orange-500" />
             </div>
-            <p className="text-5xl font-bold mb-1">{lowStockCount}</p>
+            <p className="text-3xl font-bold mb-1">{lowStockCount}</p>
             <p className="text-orange-100 text-sm">Low Stock Items</p>
           </div>
 
@@ -255,16 +266,16 @@ export function AnalyticsPage() {
             <div className="absolute top-3 right-3 bg-white rounded-lg p-3">
               <AlertCircle className="w-6 h-6 text-red-500" />
             </div>
-            <p className="text-5xl font-bold mb-1">{expiringIn30Days}</p>
+            <p className="text-3xl font-bold mb-1">{expiringIn30Days}</p>
             <p className="text-red-100 text-sm">Expiring Soon</p>
-          </div>
+          </div>z
 
           {/* Total Value Card */}
           <div className="bg-green-500 rounded-xl p-6 text-white relative overflow-hidden">
             <div className="absolute top-3 right-3 bg-white rounded-lg p-3">
-              <span className="block text-2xl font-black leading-none text-green-500">₱</span>
+              <span className="block text-xl font-black leading-none text-green-500">PHP</span>
             </div>
-            <p className="text-4xl font-bold mb-1">₱{totalValue.toLocaleString()}</p>
+            <p className="text-3xl font-bold mb-1">{formatCurrency(totalValue)}</p>
             <p className="text-green-100 text-sm">Total Value</p>
           </div>
         </div>
@@ -373,7 +384,7 @@ export function AnalyticsPage() {
           )}
         </div>
 
-        {/* Row: Total Quantity by Category & Monthly Expenses */}
+        {/* Row: Total Quantity by Category and Monthly Usage Cost */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Total Quantity by Category */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -407,11 +418,11 @@ export function AnalyticsPage() {
             </ResponsiveContainer>
           </div>
 
-          {/* Monthly Expenses Comparison */}
+          {/* Monthly Usage Cost */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Monthly Expenses Comparison</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Monthly Usage Cost</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyExpensesData}>
+              <LineChart data={monthlyUsageCostData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="month"
@@ -426,7 +437,7 @@ export function AnalyticsPage() {
                     borderRadius: '8px',
                     fontSize: '12px'
                   }}
-                  formatter={(value: number) => `₱${value.toLocaleString()}`}
+                  formatter={(value: number) => formatCurrency(value)}
                 />
                 <Line
                   type="monotone"
@@ -450,7 +461,7 @@ export function AnalyticsPage() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">CATEGORY</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">PRODUCTS</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">LOW STOCK</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">ACTION</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">INVENTORY VALUE</th>
                 </tr>
               </thead>
               <tbody>
@@ -469,10 +480,7 @@ export function AnalyticsPage() {
                       <span className="text-sm text-gray-900">{item.lowStock}</span>
                     </td>
                     <td className="py-4 px-4">
-                      <button className="flex items-center space-x-2 text-orange-500 hover:text-orange-600 transition text-sm">
-                        <ShoppingBag className="w-4 h-4" />
-                        <span>Restock</span>
-                      </button>
+                      <span className="text-sm font-medium text-gray-900">{formatCurrency(item.value)}</span>
                     </td>
                   </tr>
                 ))}
@@ -501,8 +509,8 @@ export function AnalyticsPage() {
         {/* Print Summary Metrics */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div className="p-4 border border-gray-200 rounded-lg">
-            <p className="text-xs text-gray-500 font-bold uppercase">Estimated Expenses</p>
-            <p className="text-2xl font-black text-dark-900">₱{periodExpenses.toLocaleString()}</p>
+            <p className="text-xs text-gray-500 font-bold uppercase">Usage Cost</p>
+            <p className="text-2xl font-black text-dark-900">{formatCurrency(periodExpenses)}</p>
           </div>
           <div className="p-4 border border-gray-200 rounded-lg">
             <p className="text-xs text-gray-500 font-bold uppercase">Procedures Done</p>
@@ -514,7 +522,7 @@ export function AnalyticsPage() {
           </div>
           <div className="p-4 border border-gray-200 rounded-lg">
             <p className="text-xs text-gray-500 font-bold uppercase">Total Inventory Value</p>
-            <p className="text-2xl font-black text-dark-900">₱{totalValue.toLocaleString()}</p>
+            <p className="text-2xl font-black text-dark-900">{formatCurrency(totalValue)}</p>
           </div>
         </div>
 

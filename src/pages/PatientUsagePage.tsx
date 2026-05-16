@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, User, Calendar, FileText, CheckCircle, Package } from 'lucide-react';
 import { InventoryItem, UsageRecord, UsageItem } from '../types';
-import { getInventory, saveInventory } from '../services/inventoryService';
+import { getInventory } from '../services/inventoryService';
 import { getCurrentUser } from '../services/authService';
 import { createPatientUsageRecord, getPatientUsageHistory } from '../services/patientService';
 import { toast } from 'sonner';
@@ -101,18 +101,6 @@ export function PatientUsagePage() {
       return;
     }
 
-    // Update inventory
-    const updatedInventory = inventory.map(item => {
-      const usedItem = selectedItems.find(si => si.productId === item.id);
-      if (usedItem) {
-        return {
-          ...item,
-          quantity: item.quantity - usedItem.quantityUsed,
-        };
-      }
-      return item;
-    });
-
     const user = getCurrentUser();
 
     try {
@@ -124,9 +112,8 @@ export function PatientUsagePage() {
         items: selectedItems,
       });
 
-      await saveInventory(updatedInventory);
       setUsageHistory([newRecord, ...usageHistory]);
-      setInventory(updatedInventory);
+      setInventory(await getInventory());
     } catch (error: any) {
       toast.error(error.message || 'Failed to save usage record.');
       return;
@@ -166,7 +153,7 @@ export function PatientUsagePage() {
       {/* Usage Form */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Record New Usage</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Patient Information */}
           <div className="space-y-4">

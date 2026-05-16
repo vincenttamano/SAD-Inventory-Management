@@ -56,9 +56,9 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'quantity' || name === 'lowStockThreshold' 
+      [name]: name === 'quantity' || name === 'lowStockThreshold'
         ? parseInt(value, 10) || 0
-        : name === 'price' 
+        : name === 'price'
         ? parseFloat(value) || 0
         : value,
     }));
@@ -86,8 +86,8 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
           <h2 className="text-xl sm:text-2xl font-extrabold text-dark-900 tracking-tight">
             {item ? 'Edit Inventory Item' : 'Add New Item'}
           </h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-dark-900 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -156,7 +156,7 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
                         if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); }
                         if (e.key === 'Escape') { setAddingCategory(false); setNewCategoryName(''); }
                       }}
-                      placeholder="Custom category…"
+                      placeholder="Custom category..."
                       className="w-full pl-9 pr-3 py-3 bg-white border border-gold-400 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                     />
                   </div>
@@ -250,7 +250,7 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
             {/* Price */}
             <div>
               <label htmlFor="price" className="block text-sm font-semibold text-dark-900 mb-2">
-                Unit Price (₱)
+                Unit Price (PHP )
               </label>
               <input
                 type="number"
