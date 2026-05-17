@@ -11,6 +11,7 @@ import {
 import { getCurrentUser } from '../services/authService';
 import { InventoryItemModal } from '../components/inventory/InventoryItemModal';
 import { QuantityAdjustModal } from '../components/inventory/QuantityAdjustModal';
+import { toast } from 'sonner';
 
 export function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -22,6 +23,9 @@ export function InventoryPage() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff');
   const [updateHistory, setUpdateHistory] = useState<InventoryUpdateHistory[]>([]);
+  const [savingItem, setSavingItem] = useState(false);
+  const [savingQuantity, setSavingQuantity] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -37,7 +41,7 @@ export function InventoryPage() {
           setUserRole(user.role);
         }
       } catch (error: any) {
-        alert(error.message || 'Failed to load inventory.');
+        toast.error(error.message || 'Failed to load inventory.');
       }
     };
 
@@ -69,17 +73,50 @@ export function InventoryPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      try {
-        await deleteInventoryItem(id);
-        setInventory(inventory.filter(item => item.id !== id));
-      } catch (error: any) {
-        alert(error.message || 'Failed to delete inventory item.');
-      }
-    }
+    const item = inventory.find(i => i.id === id);
+    toast('Delete inventory item?', {
+      description: item ? `${item.productName} will be removed from inventory.` : 'This item will be removed from inventory.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          setDeletingItemId(id);
+          try {
+            await deleteInventoryItem(id);
+            setInventory(inventory.filter(item => item.id !== id));
+            toast.success('Inventory item deleted.');
+          } catch (error: any) {
+            toast.error(error.message || 'Failed to delete inventory item.');
+          } finally {
+            setDeletingItemId(null);
+          }
+        },
+      },
+      cancel: {
+        label: 'Cancel',
+        onClick: () => {},
+      },
+    });
+  };
+
+  const validateInventoryItem = (item: InventoryItem) => {
+    if (!item.productName.trim()) return 'Product name is required.';
+    if (!item.category.trim()) return 'Category is required.';
+    if (!item.unit.trim()) return 'Unit measure is required.';
+    if (!item.expiryDate) return 'Expiry date is required.';
+    if (item.quantity < 0) return 'Quantity cannot be negative.';
+    if (item.lowStockThreshold < 0) return 'Low stock threshold cannot be negative.';
+    if (item.price < 0) return 'Unit price cannot be negative.';
+    return '';
   };
 
   const handleSave = async (item: InventoryItem) => {
+    const validationError = validateInventoryItem(item);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    setSavingItem(true);
     try {
       const savedItem = await saveInventoryItem(item);
       setUpdateHistory(await getInventoryUpdateHistory());
@@ -89,25 +126,36 @@ export function InventoryPage() {
 
       setInventory(updatedInventory);
       setIsModalOpen(false);
+      toast.success(editingItem ? 'Inventory item updated.' : 'Inventory item added.');
     } catch (error: any) {
-      alert(error.message || 'Failed to save inventory item.');
+      toast.error(error.message || 'Failed to save inventory item.');
+    } finally {
+      setSavingItem(false);
     }
   };
 
   const handleQuantityAdjust = async (item: InventoryItem, newQuantity: number) => {
-    try {
-      const currentUser = getCurrentUser();
-      const savedItem = await updateInventoryQuantity(item, newQuantity, currentUser?.id);
-      const updatedInventory = inventory.map(i =>
-        i.id === savedItem.id ? savedItem : i
-      );
-      setInventory(updatedInventory);
-      setUpdateHistory(await getInventoryUpdateHistory());
-      setIsQuantityModalOpen(false);
-      setSelectedItem(savedItem);
-    } catch (error: any) {
-      alert(error.message || 'Failed to adjust quantity.');
+    if (newQuantity < 0) {
+      toast.error('Quantity cannot be negative.');
+      return;
     }
+    setSavingQuantity(true);
+      try {
+        const currentUser = getCurrentUser();
+        const savedItem = await updateInventoryQuantity(item, newQuantity, currentUser?.id);
+        const updatedInventory = inventory.map(i =>
+          i.id === savedItem.id ? savedItem : i
+        );
+        setInventory(updatedInventory);
+        setUpdateHistory(await getInventoryUpdateHistory());
+        setIsQuantityModalOpen(false);
+        setSelectedItem(savedItem);
+        toast.success('Inventory quantity updated.');
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to adjust quantity.');
+      } finally {
+        setSavingQuantity(false);
+      }
   };
 
   const handleRowClick = (item: InventoryItem) => {
@@ -325,6 +373,7 @@ export function InventoryPage() {
                               handleDelete(item.id);
                             }}
                             className="text-red-600 hover:text-red-800 transition p-1"
+                            disabled={deletingItemId === item.id}
                             title="Delete Item"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -471,6 +520,7 @@ export function InventoryPage() {
           item={editingItem}
           onSave={handleSave}
           onClose={() => setIsModalOpen(false)}
+          isSaving={savingItem}
         />
       )}
 
@@ -479,6 +529,7 @@ export function InventoryPage() {
           item={editingItem}
           onSave={handleQuantityAdjust}
           onClose={() => setIsQuantityModalOpen(false)}
+          isSaving={savingQuantity}
         />
       )}
     </div>

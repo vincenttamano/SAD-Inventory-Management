@@ -23,6 +23,8 @@ export function PatientManagementPage() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [editState, setEditState] = useState<EditState | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
 
   useEffect(() => {
     getPatientUsageHistory()
@@ -93,6 +95,7 @@ export function PatientManagementPage() {
       toast.error('Procedure cannot be empty');
       return;
     }
+    setSavingEdit(true);
     try {
       await updatePatientRecord(editState.id, {
         patientName: editState.patientName.trim(),
@@ -108,6 +111,8 @@ export function PatientManagementPage() {
       toast.success('Patient record updated!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to update patient record.');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -120,6 +125,7 @@ export function PatientManagementPage() {
   const cancelDelete = () => setDeleteConfirm(null);
 
   const executeDelete = async (id: string) => {
+    setDeletingRecordId(id);
     try {
       await deletePatientRecord(id);
       setRecords(records.filter((r) => r.id !== id));
@@ -127,6 +133,8 @@ export function PatientManagementPage() {
       toast.success('Patient record deleted.');
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete patient record.');
+    } finally {
+      setDeletingRecordId(null);
     }
   };
 
@@ -363,10 +371,11 @@ export function PatientManagementPage() {
                             </span>
                             <button
                               onClick={() => executeDelete(record.id)}
-                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition font-medium"
+                              disabled={deletingRecordId === record.id}
+                              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-xs rounded-lg transition font-medium"
                               aria-label="Confirm delete"
                             >
-                              Yes
+                              {deletingRecordId === record.id ? 'Deleting...' : 'Yes'}
                             </button>
                             <button
                               onClick={cancelDelete}
@@ -380,11 +389,12 @@ export function PatientManagementPage() {
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={saveEdit}
-                              className="flex items-center gap-1 px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition font-medium"
+                              disabled={savingEdit}
+                              className="flex items-center gap-1 px-2.5 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-xs rounded-lg transition font-medium"
                               aria-label="Save changes"
                             >
                               <Save className="w-3.5 h-3.5" />
-                              Save
+                              {savingEdit ? 'Saving...' : 'Save'}
                             </button>
                             <button
                               onClick={cancelEdit}

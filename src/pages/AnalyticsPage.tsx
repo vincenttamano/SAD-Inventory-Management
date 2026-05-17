@@ -8,6 +8,7 @@ import { InventoryItem, UsageRecord } from '../types';
 import { getInventory } from '../services/inventoryService';
 import { getCurrentUser } from '../services/authService';
 import { getPatientUsageHistory } from '../services/patientService';
+import { toast } from 'sonner';
 
 export function AnalyticsPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -232,7 +233,10 @@ export function AnalyticsPage() {
               <option value="year">Past Year</option>
             </select>
             <button
-              onClick={() => window.print()}
+              onClick={() => {
+                toast.message('Preparing PDF report...');
+                window.print();
+              }}
               className="print:hidden flex items-center space-x-2 bg-dark-900 hover:bg-black text-gold-400 px-6 py-2.5 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all w-full sm:w-auto font-bold justify-center whitespace-nowrap"
             >
               <Download className="w-5 h-5" />

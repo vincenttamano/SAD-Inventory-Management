@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Tag } from 'lucide-react';
 import { InventoryItem } from '../../types';
 import { getCategories, saveCustomCategory } from '../../services/categoryService';
@@ -7,12 +8,14 @@ interface InventoryItemModalProps {
   item: InventoryItem | null;
   onSave: (item: InventoryItem) => void;
   onClose: () => void;
+  isSaving?: boolean;
 }
 
-export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModalProps) {
+export function InventoryItemModal({ item, onSave, onClose, isSaving = false }: InventoryItemModalProps) {
   const [categories, setCategories] = useState<string[]>(getCategories());
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [priceInput, setPriceInput] = useState('0');
 
   const [formData, setFormData] = useState<Omit<InventoryItem, 'id'>>({
     productName: '',
@@ -27,6 +30,7 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
 
   useEffect(() => {
     if (item) {
+      setPriceInput(String(item.price ?? 0));
       setFormData({
         productName: item.productName,
         quantity: item.quantity,
@@ -45,21 +49,31 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     onSave({
       ...formData,
       id: item?.id || '',
+      price: priceInput === '' ? 0 : Number(priceInput),
       dateCreated: item?.dateCreated || new Date().toISOString().split('T')[0],
     });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'price') {
+      setPriceInput(value);
+      setFormData((prev) => ({
+        ...prev,
+        price: value === '' ? 0 : parseFloat(value) || 0,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: name === 'quantity' || name === 'lowStockThreshold'
         ? parseInt(value, 10) || 0
-        : name === 'price'
-        ? parseFloat(value) || 0
         : value,
     }));
   };
@@ -79,8 +93,8 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
     setAddingCategory(false);
   };
 
-  return (
-    <div className="fixed inset-0 bg-dark-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 min-h-dvh bg-dark-950/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-gray-100">
         <div className="flex justify-between items-center p-5 sm:p-7 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-xl sm:text-2xl font-extrabold text-dark-900 tracking-tight">
@@ -88,6 +102,7 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
           </h2>
           <button
             onClick={onClose}
+            disabled={isSaving}
             className="p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-dark-900 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -259,7 +274,7 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
                 required
                 min="0"
                 step="0.01"
-                value={formData.price}
+                value={priceInput}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
               />
@@ -270,19 +285,22 @@ export function InventoryItemModal({ item, onSave, onClose }: InventoryItemModal
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors"
+              disabled={isSaving}
+              className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-8 py-3 font-bold bg-dark-900 hover:bg-black text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+              disabled={isSaving}
+              className="px-8 py-3 font-bold bg-dark-900 hover:bg-black disabled:bg-gray-500 disabled:text-gray-200 disabled:cursor-not-allowed text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
             >
-              {item ? 'Save Changes' : 'Add Item'}
+              {isSaving ? 'Saving...' : item ? 'Save Changes' : 'Add Item'}
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

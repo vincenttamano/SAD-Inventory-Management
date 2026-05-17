@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Activity, UserCircle, ShieldCheck } from 'lucide-react';
 import { UserRole } from '../types';
 import { loginWithCredentials, sendPasswordResetEmail } from '../services/authService';
+import { toast } from 'sonner';
 
 export function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -18,13 +19,24 @@ export function LoginPage() {
     e.preventDefault();
     setError('');
     setMessage('');
+
+    if (!identifier.trim() || !password.trim()) {
+      const nextError = 'Please enter both your email/username and password.';
+      setError(nextError);
+      toast.error(nextError);
+      return;
+    }
+
     setLoading(true);
 
     try {
       await loginWithCredentials({ identifier, password, role });
+      toast.success(`Signed in as ${role === 'admin' ? 'Admin' : 'Staff'}.`);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'An error occurred during login.');
+      const nextError = err.message || 'An error occurred during login.';
+      setError(nextError);
+      toast.error(nextError);
     } finally {
       setLoading(false);
     }
@@ -33,13 +45,25 @@ export function LoginPage() {
   const handleForgotPassword = async () => {
     setError('');
     setMessage('');
+
+    if (!identifier.trim() || !identifier.includes('@')) {
+      const nextError = 'Enter the email address for the account first.';
+      setError(nextError);
+      toast.error(nextError);
+      return;
+    }
+
     setResetLoading(true);
 
     try {
       await sendPasswordResetEmail(identifier);
-      setMessage('Password reset email sent. Check your inbox.');
+      const nextMessage = 'Password reset email sent. Check your inbox.';
+      setMessage(nextMessage);
+      toast.success(nextMessage);
     } catch (err: any) {
-      setError(err.message || 'Unable to send password reset email.');
+      const nextError = err.message || 'Unable to send password reset email.';
+      setError(nextError);
+      toast.error(nextError);
     } finally {
       setResetLoading(false);
     }
@@ -65,6 +89,7 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setRole('staff')}
+                disabled={loading}
                 className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${role === 'staff'
                   ? 'border-gold-500 bg-gold-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -80,6 +105,7 @@ export function LoginPage() {
               <button
                 type="button"
                 onClick={() => setRole('admin')}
+                disabled={loading}
                 className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${role === 'admin'
                   ? 'border-gold-500 bg-gold-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -105,6 +131,8 @@ export function LoginPage() {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
+                required
+                disabled={loading}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
                 placeholder="username"
               />
@@ -132,6 +160,8 @@ export function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
                 placeholder="Enter your password"
               />

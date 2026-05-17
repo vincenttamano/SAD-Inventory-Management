@@ -16,6 +16,7 @@ export function PatientUsagePage() {
   const [notes, setNotes] = useState('');
   const [selectedItems, setSelectedItems] = useState<UsageItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [savingUsage, setSavingUsage] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -36,10 +37,12 @@ export function PatientUsagePage() {
         unit: '',
       },
     ]);
+    toast.message('Item row added.');
   };
 
   const removeItemRow = (index: number) => {
     setSelectedItems(selectedItems.filter((_, i) => i !== index));
+    toast.message('Item row removed.');
   };
 
   const updateItemRow = (index: number, field: keyof UsageItem, value: string | number) => {
@@ -62,6 +65,7 @@ export function PatientUsagePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingUsage) return;
 
     // Validation
     if (!patientConsent) {
@@ -103,10 +107,11 @@ export function PatientUsagePage() {
 
     const user = getCurrentUser();
 
+    setSavingUsage(true);
     try {
       const newRecord = await createPatientUsageRecord({
         patientConsent,
-        patientName,
+        patientName: patientName.trim(),
         procedure: procedure.trim(),
         recordedByUserId: user?.id,
         items: selectedItems,
@@ -117,6 +122,8 @@ export function PatientUsagePage() {
     } catch (error: any) {
       toast.error(error.message || 'Failed to save usage record.');
       return;
+    } finally {
+      setSavingUsage(false);
     }
 
     // Reset form
@@ -162,6 +169,7 @@ export function PatientUsagePage() {
                 type="checkbox"
                 checked={patientConsent}
                 onChange={(e) => setPatientConsent(e.target.checked)}
+                disabled={savingUsage}
                 className="mt-0.5 sm:mt-0 h-4 w-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
               />
               <span>I confirm the patient consents to their name being recorded.</span>
@@ -179,7 +187,7 @@ export function PatientUsagePage() {
                 required
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
-                disabled={!patientConsent}
+                disabled={!patientConsent || savingUsage}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter patient name"
               />
@@ -196,7 +204,7 @@ export function PatientUsagePage() {
                 required
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
-                disabled={!patientConsent}
+                disabled={!patientConsent || savingUsage}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter patient ID"
               />
@@ -212,7 +220,7 @@ export function PatientUsagePage() {
                 required
                 value={procedure}
                 onChange={(e) => setProcedure(e.target.value)}
-                disabled={!patientConsent}
+                disabled={!patientConsent || savingUsage}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm sm:text-base"
                 placeholder="Enter performed procedure"
               />
@@ -229,6 +237,7 @@ export function PatientUsagePage() {
               <button
                 type="button"
                 onClick={addItemRow}
+                disabled={savingUsage}
                 className="flex items-center space-x-2 bg-gold-600 hover:bg-gold-700 text-white px-3 py-1.5 rounded-lg transition text-sm w-full sm:w-auto justify-center"
               >
                 <Plus className="w-4 h-4" />
@@ -253,6 +262,7 @@ export function PatientUsagePage() {
                           aria-label={`Select product for item ${index + 1}`}
                           value={item.productId}
                           onChange={(e) => updateItemRow(index, 'productId', e.target.value)}
+                          disabled={savingUsage}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none bg-white text-sm"
                           required
                         >
@@ -274,6 +284,7 @@ export function PatientUsagePage() {
                             step="0.01"
                             value={item.quantityUsed || ''}
                             onChange={(e) => updateItemRow(index, 'quantityUsed', parseFloat(e.target.value) || 0)}
+                            disabled={savingUsage}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none text-sm"
                             placeholder="0"
                             required
@@ -293,6 +304,7 @@ export function PatientUsagePage() {
                           <button
                             type="button"
                             onClick={() => removeItemRow(index)}
+                            disabled={savingUsage}
                             title={`Remove item ${index + 1}`}
                             aria-label={`Remove item ${index + 1}`}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
@@ -317,6 +329,7 @@ export function PatientUsagePage() {
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              disabled={savingUsage}
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none resize-none text-sm sm:text-base"
               placeholder="Add any additional notes about the procedure or usage..."
@@ -327,11 +340,11 @@ export function PatientUsagePage() {
           <div className="flex justify-end pt-4 border-t border-gray-200">
             <button
               type="submit"
-              disabled={selectedItems.length === 0}
+              disabled={selectedItems.length === 0 || savingUsage}
               className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition font-medium w-full sm:w-auto justify-center text-sm sm:text-base"
             >
               <Save className="w-5 h-5" />
-              <span>Record Usage & Update Inventory</span>
+              <span>{savingUsage ? 'Recording...' : 'Record Usage & Update Inventory'}</span>
             </button>
           </div>
         </form>

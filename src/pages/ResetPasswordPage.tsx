@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { updatePassword } from '../services/authService';
 import { supabase } from '../lib/supabaseClient';
+import { toast } from 'sonner';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -39,19 +40,32 @@ export function ResetPasswordPage() {
     setSuccess('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      const nextError = 'Passwords do not match.';
+      setError(nextError);
+      toast.error(nextError);
+      return;
+    }
+
+    if (password.trim().length < 6) {
+      const nextError = 'Password must be at least 6 characters.';
+      setError(nextError);
+      toast.error(nextError);
       return;
     }
 
     setLoading(true);
     try {
       await updatePassword(password);
-      setSuccess('Password updated. You can now sign in.');
+      const nextSuccess = 'Password updated. You can now sign in.';
+      setSuccess(nextSuccess);
+      toast.success(nextSuccess);
       setPassword('');
       setConfirmPassword('');
       setTimeout(() => navigate('/'), 1200);
     } catch (err: any) {
-      setError(err.message || 'Unable to update password.');
+      const nextError = err.message || 'Unable to update password.';
+      setError(nextError);
+      toast.error(nextError);
     } finally {
       setLoading(false);
     }
@@ -86,6 +100,8 @@ export function ResetPasswordPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
                   placeholder="Enter new password"
                 />
@@ -103,6 +119,8 @@ export function ResetPasswordPage() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent outline-none transition"
                   placeholder="Confirm new password"
                 />

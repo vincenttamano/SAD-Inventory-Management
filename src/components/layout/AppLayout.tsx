@@ -8,6 +8,7 @@ import { User } from '../../types';
 import { getInventory } from '../../services/inventoryService';
 import { clearCurrentUser, getCurrentUser } from '../../services/authService';
 import { AlertNotification, buildInventoryAlerts } from '../../utils/alertCalculations';
+import { toast } from 'sonner';
 
 export function AppLayout() {
   const navigate = useNavigate();
@@ -62,7 +63,9 @@ export function AppLayout() {
   }, []);
 
   const handleLogout = () => {
+    const userName = user?.name || 'User';
     clearCurrentUser();
+    toast.success(`${userName} logged out.`);
     navigate('/');
   };
 

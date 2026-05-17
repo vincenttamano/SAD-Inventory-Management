@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Minus } from 'lucide-react';
 import { InventoryItem } from '../../types';
 
@@ -6,9 +7,10 @@ interface QuantityAdjustModalProps {
   item: InventoryItem;
   onSave: (item: InventoryItem, newQuantity: number) => void;
   onClose: () => void;
+  isSaving?: boolean;
 }
 
-export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustModalProps) {
+export function QuantityAdjustModal({ item, onSave, onClose, isSaving = false }: QuantityAdjustModalProps) {
   const [quantity, setQuantity] = useState(item.quantity);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -22,6 +24,7 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     if (quantity !== item.quantity) {
       setShowConfirmation(true);
     } else {
@@ -30,6 +33,7 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
   };
 
   const handleConfirm = () => {
+    if (isSaving) return;
     onSave(item, quantity);
     setShowConfirmation(false);
   };
@@ -38,9 +42,9 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
     setShowConfirmation(false);
   };
 
-  return (
+  return createPortal(
     <>
-      <div className="fixed inset-0 bg-dark-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      <div className="fixed inset-0 min-h-dvh bg-dark-950/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200 border border-gray-100">
           <div className="flex justify-between items-center p-5 sm:p-7 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-xl font-extrabold text-dark-900 tracking-tight">
@@ -48,6 +52,7 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
             </h2>
             <button
               onClick={onClose}
+              disabled={isSaving}
               className="p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-dark-900 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -81,6 +86,7 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
                     min="0"
                     value={quantity}
                     onChange={(e) => setQuantity(Math.max(0, Number(e.target.value)))}
+                    disabled={isSaving}
                     className="w-28 text-center text-3xl font-extrabold px-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-gold-500/20 focus:border-gold-500 outline-none text-dark-900 shadow-sm"
                   />
                   <p className="text-sm font-bold text-gray-400 mt-2 absolute -bottom-6 left-1/2 -translate-x-1/2">{item.unit}</p>
@@ -112,15 +118,17 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors"
+                disabled={isSaving}
+                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 font-bold bg-dark-900 hover:bg-black text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+                disabled={isSaving}
+                className="px-6 py-3 font-bold bg-dark-900 hover:bg-black disabled:bg-gray-500 disabled:text-gray-200 disabled:cursor-not-allowed text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
               >
-                Update Quantity
+                {isSaving ? 'Updating...' : 'Update Quantity'}
               </button>
             </div>
           </form>
@@ -129,7 +137,7 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
 
       {/* Confirmation Dialog */}
       {showConfirmation && (
-        <div className="fixed inset-0 bg-dark-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
+        <div className="fixed inset-0 min-h-dvh bg-dark-950/80 backdrop-blur-md flex items-start sm:items-center justify-center p-4 z-[60] animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-7 animate-in zoom-in-95">
             <h3 className="text-xl font-extrabold text-dark-900 mb-4">Confirm Change</h3>
             <p className="text-gray-600 mb-8 leading-relaxed">
@@ -139,20 +147,23 @@ export function QuantityAdjustModal({ item, onSave, onClose }: QuantityAdjustMod
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
               <button
                 onClick={handleCancel}
-                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors w-full sm:w-auto"
+                disabled={isSaving}
+                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl transition-colors w-full sm:w-auto"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirm}
-                className="px-6 py-3 font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+                disabled={isSaving}
+                className="px-6 py-3 font-bold bg-gold-500 hover:bg-gold-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 w-full sm:w-auto"
               >
-                Confirm
+                {isSaving ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body
   );
 }

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Search, X, Calendar, Package, Trash2, Edit2 } from 'lucide-react';
 import { InventoryItem, SimpleUsageRecord } from '../types';
 import { getInventory, saveInventory } from '../services/inventoryService';
 import { getCurrentUser } from '../services/authService';
 import { createSimpleUsageRecord, deleteSimpleUsageRecord, getSimpleUsageHistory } from '../services/usageService';
+import { toast } from 'sonner';
 
 export function UsagePage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -17,6 +19,8 @@ export function UsagePage() {
   const [patientName, setPatientName] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'staff'>('staff');
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [savingUsage, setSavingUsage] = useState(false);
+  const [deletingUsageId, setDeletingUsageId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -29,7 +33,7 @@ export function UsagePage() {
       }
     };
 
-    load().catch((error) => alert(error.message || 'Failed to load usage data.'));
+    load().catch((error) => toast.error(error.message || 'Failed to load usage data.'));
   }, []);
 
   const isAdmin = userRole === 'admin';
@@ -38,11 +42,15 @@ export function UsagePage() {
     const exists = selectedItems.find(item => item.itemId === itemId);
     if (!exists) {
       setSelectedItems([...selectedItems, { itemId, quantity: 1 }]);
+      const item = inventory.find(i => i.id === itemId);
+      if (item) toast.success(`${item.productName} added.`);
     }
   };
 
   const handleRemoveItem = (itemId: string) => {
     setSelectedItems(selectedItems.filter(item => item.itemId !== itemId));
+    const item = inventory.find(i => i.id === itemId);
+    if (item) toast.message(`${item.productName} removed.`);
   };
 
   const handleQuantityChange = (itemId: string, quantity: number) => {
@@ -58,23 +66,24 @@ export function UsagePage() {
 
     // Simulate sending email notification
     setTimeout(() => {
-      alert(`Success! The Admin has been notified via email about the "${record.procedure}" usage.`);
+      toast.success(`Admin notified about "${record.procedure}" usage.`);
     }, 500);
   };
 
   const handleSubmit = async () => {
+    if (savingUsage) return;
     if (selectedItems.length === 0) {
-      alert('Please select at least one item');
+      toast.error('Please select at least one item.');
       return;
     }
 
     if (!procedure.trim()) {
-      alert('Please enter the procedure');
+      toast.error('Please enter the procedure.');
       return;
     }
 
     if (patientConsent && !patientName.trim()) {
-      alert('Please enter patient name or uncheck consent to keep name hidden');
+      toast.error('Please enter patient name or uncheck consent to keep name hidden.');
       return;
     }
 
@@ -94,7 +103,7 @@ export function UsagePage() {
 
     if (insufficientStock) {
       const item = inventory.find(i => i.id === insufficientStock.itemId);
-      alert(`Insufficient stock for ${item?.productName || 'selected item'}.`);
+      toast.error(`Insufficient stock for ${item?.productName || 'selected item'}.`);
       return;
     }
 
@@ -142,6 +151,7 @@ export function UsagePage() {
     };
 
     // Save updates
+    setSavingUsage(true);
     try {
       if (editingRecordId) {
         await deleteSimpleUsageRecord(editingRecordId);
@@ -155,9 +165,12 @@ export function UsagePage() {
         setUsageHistory([savedRecord, ...usageHistory]);
         sendAdminNotificationEmail(savedRecord);
       }
+      toast.success(editingRecordId ? 'Usage record updated.' : 'Usage recorded.');
     } catch (error: any) {
-      alert(error.message || 'Failed to save usage record.');
+      toast.error(error.message || 'Failed to save usage record.');
       return;
+    } finally {
+      setSavingUsage(false);
     }
 
     // Reset form
@@ -181,28 +194,41 @@ export function UsagePage() {
   };
 
   const handleDeleteUsage = async (recordId: string) => {
-    if (!window.confirm('Are you sure you want to delete this usage record? The used items will be restored to inventory.')) return;
-
     const recordToDelete = usageHistory.find(r => r.id === recordId);
     if (!recordToDelete) return;
 
-    // Refund inventory
-    const updatedInventory = [...inventory];
-    recordToDelete.items.forEach(usedItem => {
-      const invItem = updatedInventory.find(i => i.id === usedItem.itemId);
-      if (invItem) {
-        invItem.quantity += usedItem.quantity;
-      }
-    });
+    toast('Delete usage record?', {
+      description: 'Used items will be restored to inventory.',
+      action: {
+        label: 'Delete',
+        onClick: async () => {
+          const updatedInventory = [...inventory];
+          recordToDelete.items.forEach(usedItem => {
+            const invItem = updatedInventory.find(i => i.id === usedItem.itemId);
+            if (invItem) {
+              invItem.quantity += usedItem.quantity;
+            }
+          });
 
-    try {
-      await deleteSimpleUsageRecord(recordId);
-      await saveInventory(updatedInventory);
-      setInventory(updatedInventory);
-      setUsageHistory(usageHistory.filter(r => r.id !== recordId));
-    } catch (error: any) {
-      alert(error.message || 'Failed to delete usage record.');
-    }
+          setDeletingUsageId(recordId);
+          try {
+            await deleteSimpleUsageRecord(recordId);
+            await saveInventory(updatedInventory);
+            setInventory(updatedInventory);
+            setUsageHistory(usageHistory.filter(r => r.id !== recordId));
+            toast.success('Usage record deleted and inventory restored.');
+          } catch (error: any) {
+            toast.error(error.message || 'Failed to delete usage record.');
+          } finally {
+            setDeletingUsageId(null);
+          }
+        },
+      },
+      cancel: {
+        label: 'Cancel',
+        onClick: () => {},
+      },
+    });
   };
 
   const filteredInventory = inventory.filter(item =>
@@ -362,7 +388,8 @@ export function UsagePage() {
                         </button>
                         <button
                           onClick={() => handleDeleteUsage(record.id)}
-                          className="text-red-600 hover:text-red-800 transition p-1 bg-red-50 rounded-md"
+                          disabled={deletingUsageId === record.id}
+                          className="text-red-600 hover:text-red-800 disabled:text-gray-300 disabled:cursor-not-allowed transition p-1 bg-red-50 rounded-md"
                           title="Delete Usage"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -384,8 +411,8 @@ export function UsagePage() {
       </div>
 
       {/* Record Usage Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-dark-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 min-h-dvh bg-dark-950/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50 animate-in fade-in duration-200 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-gray-100">
             <div className="p-5 sm:p-7 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-xl sm:text-2xl font-extrabold text-dark-900 tracking-tight">
@@ -394,6 +421,7 @@ export function UsagePage() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
+                disabled={savingUsage}
                 aria-label="Close record usage modal"
                 title="Close"
                 className="p-2 rounded-full hover:bg-gray-200 text-gray-500 hover:text-dark-900 transition-colors"
@@ -412,6 +440,7 @@ export function UsagePage() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  disabled={savingUsage}
                   aria-label="Usage date"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                 />
@@ -425,6 +454,7 @@ export function UsagePage() {
                   type="text"
                   value={procedure}
                   onChange={(e) => setProcedure(e.target.value)}
+                  disabled={savingUsage}
                   placeholder="e.g., Tooth extraction"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                 />
@@ -436,6 +466,7 @@ export function UsagePage() {
                     type="checkbox"
                     checked={patientConsent}
                     onChange={(e) => setPatientConsent(e.target.checked)}
+                    disabled={savingUsage}
                     className="h-5 w-5 rounded border-gray-300 text-gold-600 focus:ring-gold-500 cursor-pointer"
                   />
                   Patient consents to recording their name
@@ -444,7 +475,7 @@ export function UsagePage() {
                   type="text"
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
-                  disabled={!patientConsent}
+                  disabled={!patientConsent || savingUsage}
                   placeholder={patientConsent ? 'Enter patient name' : 'Name hidden (no consent)'}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none disabled:bg-gray-100 disabled:text-gray-400 text-dark-900 transition-shadow"
                 />
@@ -475,6 +506,7 @@ export function UsagePage() {
                             min="1"
                             value={quantity}
                             onChange={(e) => handleQuantityChange(itemId, parseInt(e.target.value))}
+                            disabled={savingUsage}
                             aria-label={`Quantity for ${item.productName}`}
                             className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm text-center font-bold focus:ring-2 focus:ring-gold-500 outline-none"
                           />
@@ -483,6 +515,7 @@ export function UsagePage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(itemId)}
+                          disabled={savingUsage}
                           aria-label={`Remove ${item.productName}`}
                           title={`Remove ${item.productName}`}
                           className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -510,6 +543,7 @@ export function UsagePage() {
                     placeholder="Search inventory..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={savingUsage}
                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gold-500 focus:border-gold-500 outline-none text-dark-900 transition-shadow"
                   />
                 </div>
@@ -532,7 +566,7 @@ export function UsagePage() {
                         } ${
                           isSelected ? 'bg-gold-50 border-l-4 border-l-gold-500' : ''
                         }`}
-                        onClick={() => canAdd && !isSelected && handleAddItem(item.id)}
+                        onClick={() => !savingUsage && canAdd && !isSelected && handleAddItem(item.id)}
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
@@ -566,19 +600,22 @@ export function UsagePage() {
             <div className="p-5 sm:p-7 border-t border-gray-100 flex flex-col-reverse sm:flex-row gap-3 justify-end">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl transition-colors w-full sm:w-auto"
+                disabled={savingUsage}
+                className="px-6 py-3 font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl transition-colors w-full sm:w-auto"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-8 py-3 font-bold bg-dark-900 hover:bg-black text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+                disabled={savingUsage}
+                className="px-8 py-3 font-bold bg-dark-900 hover:bg-black disabled:bg-gray-500 disabled:text-gray-200 disabled:cursor-not-allowed text-gold-400 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 w-full sm:w-auto"
               >
-                Save Usage
+                {savingUsage ? 'Saving...' : 'Save Usage'}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
