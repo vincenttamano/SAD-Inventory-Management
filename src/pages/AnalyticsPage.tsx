@@ -268,7 +268,7 @@ export function AnalyticsPage() {
             </div>
             <p className="text-3xl font-bold mb-1">{expiringIn30Days}</p>
             <p className="text-red-100 text-sm">Expiring Soon</p>
-          </div>z
+          </div>
 
           {/* Total Value Card */}
           <div className="bg-green-500 rounded-xl p-6 text-white relative overflow-hidden">
